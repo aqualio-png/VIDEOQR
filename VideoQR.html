@@ -259,9 +259,13 @@ body.outdoor .pd{background:#fff}
         <div class="v-ok-ic">&#10003;</div>
         <div class="v-ok-ttl">Acces accorde</div>
         <div class="v-ok-sub" id="v-ok-sub"></div>
-        <video class="v-player" id="v-player" controls playsinline preload="auto" style="margin-top:6px"></video>
-        <a class="v-dl" id="v-dl-btn" href="#" download>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <a class="v-dl" id="v-open-btn" href="#" target="_blank" rel="noopener"
+          style="background:var(--amb);color:#0c0c0e;margin-top:10px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Lire la video
+        </a>
+        <a class="v-open" id="v-dl-btn" href="#" download>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Telecharger la video
         </a>
       </div>
@@ -998,8 +1002,10 @@ function verifyPIN() {
       var fn = '';
       try { fn = decodeURIComponent(vd.u.split('/').pop().split('?')[0]); } catch(e) {}
       if (!fn || fn.indexOf('.') < 0) fn = 'video.mp4';
-      var player = document.getElementById('v-player');
-      if (player) { player.src = vd.u; player.onerror = function(){ player.style.display='none'; }; }
+      /* Bouton Lire : ouvre dans le player natif Android */
+      var openBtn = document.getElementById('v-open-btn');
+      if (openBtn) openBtn.href = vd.u;
+      /* Bouton Telecharger */
       var dl = document.getElementById('v-dl-btn');
       dl.href = vd.u; dl.setAttribute('download', fn);
       document.getElementById('v-ok-sub').textContent = '\u00AB '+(vd.t||'video')+'\u00BB';

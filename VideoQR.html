@@ -1006,13 +1006,17 @@ function verifyPIN() {
 
       document.getElementById('v-ok-sub').textContent = '\u00AB '+(vd.t||'video')+'\u00BB';
 
-      /* Bouton VLC / player Android via intent:// */
+      var isHttp = vd.u.startsWith('http://');
+      var pageHttps = window.location.protocol === 'https:';
+      var mixedBlock = isHttp && pageHttps; /* Chrome bloque HTTP depuis HTTPS */
+
+      /* Bouton Ouvrir avec VLC */
       var openBtn = document.getElementById('v-open-btn');
       if (openBtn) {
         openBtn.onclick = function() {
-          /* intent:// permet a Chrome Android de proposer VLC ou tout player installe */
+          var scheme = vd.u.startsWith('https') ? 'https' : 'http';
           var intentUrl = 'intent://' + vd.u.replace(/^https?:\/\//, '')
-            + '#Intent;scheme=' + (vd.u.startsWith('https') ? 'https' : 'http')
+            + '#Intent;scheme=' + scheme
             + ';type=video/mp4'
             + ';package=org.videolan.vlc'
             + ';S.browser_fallback_url=' + encodeURIComponent(vd.u)
@@ -1021,19 +1025,41 @@ function verifyPIN() {
         };
       }
 
-      /* Bouton telecharger : intent sans package = Chrome propose toutes les apps */
+      /* Bouton Telecharger */
       var dlBtn = document.getElementById('v-dl-btn');
       if (dlBtn) {
-        dlBtn.onclick = function() {
-          var scheme = vd.u.startsWith('https') ? 'https' : 'http';
-          var intentUrl = 'intent://' + vd.u.replace(/^https?:\/\//, '')
-            + '#Intent;scheme=' + scheme
-            + ';type=video/mp4'
-            + ';action=android.intent.action.VIEW'
-            + ';S.browser_fallback_url=' + encodeURIComponent(vd.u)
-            + ';end';
-          window.location.href = intentUrl;
-        };
+        if (mixedBlock) {
+          /* HTTP depuis HTTPS : impossible de telecharger directement.
+             On passe par intent sans package => Android ouvre le selecteur
+             qui inclut le gestionnaire de telechargement */
+          dlBtn.textContent = '\u2193 Telecharger (choisir app)';
+          dlBtn.onclick = function() {
+            var scheme = 'http';
+            var intentUrl = 'intent://' + vd.u.replace(/^http:\/\//, '')
+              + '#Intent;scheme=' + scheme
+              + ';type=video/mp4'
+              + ';action=android.intent.action.VIEW'
+              + ';category=android.intent.category.BROWSABLE'
+              + ';S.browser_fallback_url=' + encodeURIComponent(vd.u)
+              + ';end';
+            var a = document.createElement('a');
+            a.href = intentUrl;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function(){ document.body.removeChild(a); }, 500);
+          };
+        } else {
+          /* HTTPS ou meme origine : telechargement direct */
+          dlBtn.textContent = '\u2193 Telecharger la video';
+          dlBtn.onclick = function() {
+            var a = document.createElement('a');
+            a.href = vd.u;
+            a.download = fn;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function(){ document.body.removeChild(a); }, 500);
+          };
+        }
       }
     } else {
       window._att++;

@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VideoQR — Partager par QR Code</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{
+  --bg:#0c0c0e;--surf:#141416;--surf2:#18181f;
+  --bdr:#1f1f24;--bdr-lit:#2e2e36;
+  --amb:#f5a623;--amb-d:#c47e10;--amb-g:rgba(245,166,35,.12);
+  --tx:#e8e4da;--mu:#6b6760;--dim:#2a2826;
+  --grn:#3ecf8e;--red:#e85555;--blue:#4a9eff;
+  --sh:0 8px 32px rgba(0,0,0,.4);
+}
+body.outdoor{
+  --bg:#f0ebe0;--surf:#fffcf5;--surf2:#e8e0d0;
+  --bdr:#a09070;--bdr-lit:#70604a;
+  --amb:#b85a00;--amb-d:#8a4000;--amb-g:rgba(184,90,0,.1);
+  --tx:#110d06;--mu:#504030;--dim:#ddd0bc;
+  --grn:#145a30;--red:#9a1010;--blue:#0a3a80;
+  --sh:0 4px 16px rgba(0,0,0,.15);
+}
+body.outdoor::before,body.outdoor::after{display:none!important}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh;overflow-x:hidden;transition:background .3s,color .3s}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.04'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:.5}
+body::after{content:'';position:fixed;top:-20vh;left:50%;transform:translateX(-50%);width:60vw;height:50vh;background:radial-gradient(ellipse,rgba(245,166,35,.06) 0%,transparent 70%);pointer-events:none;z-index:0}
+.wrap{position:relative;z-index:1;max-width:880px;margin:0 auto;padding:0 24px 80px}
+header{padding:40px 0 34px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bdr);margin-bottom:44px;gap:12px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:14px}
+.logo-icon{width:44px;height:44px;background:var(--amb);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo-icon svg{width:24px;height:24px}
+h1{font-family:'Bebas Neue',sans-serif;font-size:2.4rem;letter-spacing:.04em;line-height:1}
+h1 span{color:var(--amb)}
+.tagline{font-size:.78rem;color:var(--mu);letter-spacing:.1em;text-transform:uppercase}
+.od-btn{display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:22px;border:2px solid var(--bdr);background:var(--surf);color:var(--mu);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;transition:all .2s;flex-shrink:0;outline:none}
+.od-btn:hover{border-color:var(--amb);color:var(--amb)}
+body.outdoor .od-btn{background:var(--amb);color:#fff;border-color:var(--amb)}
+.guide{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:40px}
+.step{background:var(--surf);border:1px solid var(--bdr);border-radius:12px;padding:20px;transition:border-color .2s}
+.step:hover{border-color:var(--bdr-lit)}
+.step-num{font-family:'Bebas Neue',sans-serif;font-size:3rem;color:var(--dim);line-height:1;margin-bottom:7px}
+.step-title{font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--amb);margin-bottom:5px}
+.step-desc{font-size:.79rem;color:var(--mu);line-height:1.55}
+.step-desc code{font-family:'DM Mono',monospace;background:var(--dim);padding:1px 5px;border-radius:4px;font-size:.76rem;color:var(--amb)}
+.tabs{display:flex;border:1px solid var(--bdr);border-radius:10px;overflow:hidden;margin-bottom:18px;width:fit-content}
+.tab{padding:9px 17px;font-size:.78rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mu);cursor:pointer;background:transparent;border:none;transition:all .18s;white-space:nowrap}
+.tab.active{background:var(--amb);color:#0c0c0e}
+.tab:not(.active):hover{color:var(--tx)}
+.panel{display:none}.panel.active{display:block}
+.card{background:var(--surf);border:1px solid var(--bdr);border-radius:16px;padding:28px;margin-bottom:14px}
+.field-label{font-size:.73rem;text-transform:uppercase;letter-spacing:.1em;color:var(--mu);margin-bottom:8px;font-weight:600}
+.field-hint{font-size:.71rem;color:var(--mu);line-height:1.5;margin-top:5px}
+input[type="text"],input[type="url"]{width:100%;background:var(--bg);border:1px solid var(--bdr);border-radius:8px;color:var(--tx);font-family:'DM Mono',monospace;font-size:.83rem;padding:11px 13px;transition:border-color .18s,box-shadow .18s;outline:none}
+input[type="text"]:focus,input[type="url"]:focus{border-color:var(--amb);box-shadow:0 0 0 3px var(--amb-g)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.field-group{margin-bottom:16px}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:11px 20px;border-radius:8px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.84rem;font-weight:500;letter-spacing:.03em;transition:all .18s;white-space:nowrap;text-decoration:none}
+.btn-primary{background:var(--amb);color:#0c0c0e}
+.btn-primary:hover{background:var(--amb-d);transform:translateY(-1px);box-shadow:0 4px 18px var(--amb-g)}
+.btn-primary:active,.btn-primary:disabled{transform:none;opacity:.6;cursor:not-allowed}
+.btn-ghost{background:transparent;color:var(--mu);border:1px solid var(--bdr)}
+.btn-ghost:hover{color:var(--tx);border-color:var(--bdr-lit)}
+.btn-red{background:transparent;color:var(--red);border:1px solid rgba(232,85,85,.3)}
+.btn-red:hover{background:rgba(232,85,85,.1);border-color:var(--red)}
+.btn-green{background:rgba(62,207,142,.1);color:var(--grn);border:1px solid rgba(62,207,142,.25)}
+.btn-green:hover{background:rgba(62,207,142,.18)}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.qr-section{display:none}
+.qr-section.visible{display:block;animation:slideUp .3s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.qr-card{background:var(--surf);border:1px solid var(--bdr);border-radius:16px;padding:28px;display:grid;grid-template-columns:auto 1fr;gap:32px;align-items:start}
+.qr-box{background:#fff;padding:14px;border-radius:12px;display:flex;align-items:center;justify-content:center;width:220px;height:220px;flex-shrink:0}
+#qr-container{display:flex;align-items:center;justify-content:center}
+#qr-container canvas,#qr-container img{max-width:192px;max-height:192px;border-radius:3px}
+.qr-info h3{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:.04em;margin-bottom:8px}
+.qr-meta{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:.71rem;padding:4px 10px;border-radius:20px;font-weight:500;letter-spacing:.04em}
+.badge-grn{background:rgba(62,207,142,.08);color:var(--grn);border:1px solid rgba(62,207,142,.2)}
+.badge-amb{background:var(--amb-g);color:var(--amb);border:1px solid rgba(245,166,35,.2)}
+.badge-blue{background:rgba(74,158,255,.08);color:var(--blue);border:1px solid rgba(74,158,255,.2)}
+.qr-url{font-family:'DM Mono',monospace;font-size:.73rem;color:var(--mu);word-break:break-all;background:var(--bg);padding:9px 12px;border-radius:6px;border:1px solid var(--bdr);margin-bottom:14px;line-height:1.5}
+.size-sel{display:flex;gap:7px;flex-wrap:wrap}
+.size-opt{padding:6px 13px;border-radius:6px;border:1px solid var(--bdr);background:transparent;color:var(--mu);cursor:pointer;font-size:.76rem;font-family:'DM Mono',monospace;transition:all .15s}
+.size-opt.sel{background:var(--amb-g);color:var(--amb);border-color:var(--amb)}
+.size-opt:hover:not(.sel){color:var(--tx)}
+.color-opts{display:flex;gap:8px;flex-wrap:wrap}
+.csw{width:30px;height:30px;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:transform .15s,border-color .15s}
+.csw.sel{border-color:var(--amb);transform:scale(1.12)}
+.csw:hover:not(.sel){transform:scale(1.08)}
+.pin-toggle{display:flex;align-items:center;gap:10px;margin-top:16px;padding:13px 15px;background:var(--bg);border:1px solid var(--bdr);border-radius:10px;cursor:pointer;transition:border-color .18s}
+.pin-toggle:hover{border-color:var(--bdr-lit)}
+.pin-toggle input[type="checkbox"]{width:17px;height:17px;accent-color:var(--amb);cursor:pointer;flex-shrink:0}
+.pin-toggle-lbl{font-size:.84rem;font-weight:500;color:var(--tx);cursor:pointer;display:flex;align-items:center;gap:10px;width:100%}
+.pin-toggle-sub{font-size:.73rem;color:var(--mu);margin-left:auto}
+.pin-inner{margin-top:13px;display:flex;flex-direction:column;gap:13px}
+.pin-code-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--bg);border:1px solid var(--bdr);border-radius:10px;padding:13px 15px}
+.pin-code-lbl{font-size:.73rem;text-transform:uppercase;letter-spacing:.08em;color:var(--mu);font-weight:600}
+.pin-code{font-family:'DM Mono',monospace;font-size:2.2rem;font-weight:700;letter-spacing:.25em;color:var(--amb);background:var(--amb-g);padding:5px 16px;border-radius:8px;border:1px solid rgba(245,166,35,.2)}
+.pin-warn{font-size:.75rem;color:var(--mu);line-height:1.55;display:flex;gap:7px}
+.pin-warn-i{color:var(--amb);flex-shrink:0}
+.file-drop{border:2px dashed var(--bdr);border-radius:14px;padding:34px 20px;text-align:center;cursor:pointer;transition:all .2s}
+.file-drop:hover,.file-drop.drag{border-color:var(--amb);background:var(--amb-g)}
+.fd-icon{font-size:2.4rem;margin-bottom:9px;line-height:1}
+.fd-label{font-weight:500;color:var(--tx);font-size:.9rem;margin-bottom:4px}
+.fd-sub{font-size:.76rem;color:var(--mu)}
+.vinfo{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:13px}
+.vi{background:var(--bg);border:1px solid var(--bdr);border-radius:8px;padding:9px;text-align:center}
+.vi-v{font-size:.86rem;font-family:'DM Mono',monospace;color:var(--tx);font-weight:500;word-break:break-all}
+.vi-k{font-size:.67rem;text-transform:uppercase;letter-spacing:.07em;color:var(--mu);margin-top:3px}
+.preset-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:12px 0}
+.pc{border:1px solid var(--bdr);border-radius:10px;padding:11px 7px;cursor:pointer;transition:all .15s;text-align:center;background:var(--surf2)}
+.pc.sel{border-color:var(--amb);background:var(--amb-g)}
+.pc:hover:not(.sel){border-color:var(--bdr-lit)}
+.pc-icon{font-size:1.4rem;margin-bottom:4px}
+.pc-name{font-size:.73rem;font-weight:600;color:var(--tx);margin-bottom:2px;line-height:1.2}
+.pc-lbl{font-size:.65rem;color:var(--mu);font-family:'DM Mono',monospace}
+.prog-wrap{background:var(--dim);border-radius:8px;height:7px;overflow:hidden;margin:8px 0 4px}
+.prog-fill{height:100%;background:var(--amb);border-radius:8px;transition:width .4s ease;width:0}
+.prog-row{display:flex;justify-content:space-between;align-items:center;font-size:.77rem}
+.res-box{background:rgba(62,207,142,.06);border:1px solid rgba(62,207,142,.2);border-radius:12px;padding:17px}
+.res-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 14px}
+.rg{text-align:center}
+.rg-v{font-size:.9rem;font-family:'DM Mono',monospace;font-weight:600;color:var(--tx)}
+.rg-v.g{color:var(--grn)}
+.rg-k{font-size:.67rem;text-transform:uppercase;letter-spacing:.07em;color:var(--mu);margin-top:2px}
+.info-note{background:var(--bg);border:1px solid var(--bdr);border-radius:8px;padding:10px 13px;font-size:.78rem;color:var(--mu);line-height:1.55;margin-top:10px}
+.info-note strong{color:var(--tx)}
+.batch-list{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.batch-item{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center;background:var(--bg);padding:10px;border-radius:8px;border:1px solid var(--bdr)}
+.batch-item input{margin:0}
+.batch-rm{width:32px;height:32px;border-radius:6px;border:1px solid var(--bdr);background:transparent;color:var(--mu);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1rem;transition:all .15s}
+.batch-rm:hover{background:rgba(232,85,85,.1);color:var(--red);border-color:var(--red)}
+.batch-results{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:13px;margin-top:16px}
+.brc{background:var(--surf);border:1px solid var(--bdr);border-radius:10px;padding:13px;display:flex;flex-direction:column;align-items:center;gap:9px;cursor:pointer;transition:border-color .18s}
+.brc:hover{border-color:var(--amb)}
+.brc-qr{background:#fff;padding:7px;border-radius:6px}
+.brc-lbl{font-size:.73rem;color:var(--mu);text-align:center;word-break:break-all;font-family:'DM Mono',monospace;line-height:1.4}
+.gh-steps{display:flex;flex-direction:column;gap:1px;border:1px solid var(--bdr);border-radius:12px;overflow:hidden}
+.gh-step{background:var(--surf);padding:14px 17px;display:flex;gap:14px;align-items:flex-start;border-bottom:1px solid var(--bdr);transition:background .15s}
+.gh-step:last-child{border-bottom:none}
+.gh-step:hover{background:var(--surf2)}
+.gh-num{width:26px;height:26px;background:var(--amb);color:#0c0c0e;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.73rem;font-weight:700;flex-shrink:0;margin-top:1px}
+.gh-text{font-size:.82rem;line-height:1.6;color:var(--tx)}
+.gh-text strong{color:var(--amb);font-weight:500}
+.gh-text code{font-family:'DM Mono',monospace;background:var(--dim);padding:1px 5px;border-radius:4px;font-size:.77rem;color:var(--amb)}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.68);backdrop-filter:blur(4px);z-index:1000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .22s}
+.modal-bg.open{opacity:1;pointer-events:all}
+.modal-box{background:var(--surf);border:1px solid var(--bdr-lit);border-radius:16px;padding:30px;max-width:400px;width:calc(100% - 48px);transform:translateY(12px) scale(.97);transition:transform .22s;box-shadow:var(--sh)}
+.modal-bg.open .modal-box{transform:translateY(0) scale(1)}
+.modal-icon{width:46px;height:46px;border-radius:10px;background:rgba(232,85,85,.1);border:1px solid rgba(232,85,85,.2);display:flex;align-items:center;justify-content:center;margin-bottom:13px}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:1.35rem;letter-spacing:.04em;margin-bottom:8px}
+.modal-body{font-size:.82rem;color:var(--mu);line-height:1.6;margin-bottom:22px}
+.modal-body strong{color:var(--tx)}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end}
+footer{margin-top:50px;padding-top:20px;border-top:1px solid var(--bdr);font-size:.74rem;color:var(--mu);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.toast{position:fixed;bottom:26px;right:26px;background:var(--surf);border:1px solid var(--bdr-lit);border-radius:10px;padding:12px 18px;font-size:.82rem;color:var(--tx);display:flex;align-items:center;gap:9px;z-index:999;transform:translateY(60px);opacity:0;transition:all .3s ease;box-shadow:var(--sh)}
+.toast.show{transform:translateY(0);opacity:1}
+.toast-dot{width:8px;height:8px;border-radius:50%;background:var(--grn);flex-shrink:0}
+#print-zone{display:none}
+@media print{
+  body>*{display:none!important}
+  #print-zone{display:flex!important;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:40px;font-family:'DM Sans',sans-serif;background:#fff;color:#111}
+  #print-zone .pz-title{font-size:2rem;font-weight:700;letter-spacing:.06em;margin-bottom:5px;color:#111;text-align:center}
+  #print-zone .pz-desc{font-size:.88rem;color:#555;margin-bottom:18px;text-align:center}
+  #print-zone .pz-qr{border:2px solid #ddd;border-radius:10px;padding:14px;background:#fff;margin-bottom:14px}
+  #print-zone .pz-qr img{display:block}
+  #print-zone .pz-url{font-family:monospace;font-size:.7rem;color:#888;word-break:break-all;text-align:center;max-width:380px;border:1px solid #eee;padding:7px 11px;border-radius:6px;margin-bottom:8px}
+  #print-zone .pz-hint{font-size:.74rem;color:#aaa;text-align:center}
+}
+@media(max-width:660px){
+  .guide{grid-template-columns:1fr}
+  .field-row{grid-template-columns:1fr}
+  .qr-card{grid-template-columns:1fr}
+  .qr-box{width:100%;height:auto;min-height:160px}
+  header{flex-direction:column;align-items:flex-start}
+  .preset-grid{grid-template-columns:repeat(3,1fr)}
+  .vinfo{grid-template-columns:repeat(2,1fr)}
+  .tabs{width:100%}
+  .tab{flex:1;text-align:center;padding:9px 6px;font-size:.7rem}
+  .btn{padding:10px 13px;font-size:.8rem}
+  .batch-item{grid-template-columns:1fr auto}
+}
+/* Alerte longueur QR data: */
+.qr-len-warn{background:rgba(232,85,85,.08);border:1px solid rgba(232,85,85,.25);border-radius:8px;padding:10px 13px;font-size:.78rem;color:var(--red);line-height:1.6;margin-top:10px;display:none}
+</style>
+</head>
+<body>
+
+<div id="app-root">
+<div class="wrap">
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#0c0c0e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+    </div>
+    <div>
+      <h1>Video<span>QR</span></h1>
+      <div class="tagline">Partage video par QR Code</div>
+    </div>
+  </div>
+  <button class="od-btn" onclick="toggleOutdoor()" title="Mode plein soleil">
+    <span id="od-sun">&#9728; Plein soleil</span>
+    <span id="od-moon" style="display:none">&#9790; Mode nuit</span>
+  </button>
+</header>
+
+<div class="guide">
+  <div class="step">
+    <div class="step-num">01</div>
+    <div class="step-title">Heberger</div>
+    <div class="step-desc">Deposez la video dans un dossier partage de votre Freebox. Copiez le lien de partage <code>.mp4</code>.</div>
+  </div>
+  <div class="step">
+    <div class="step-num">02</div>
+    <div class="step-title">Generer</div>
+    <div class="step-desc">Collez l'URL video, choisissez avec ou sans <code>PIN</code>, cliquez Generer.</div>
+  </div>
+  <div class="step">
+    <div class="step-num">03</div>
+    <div class="step-title">Partager</div>
+    <div class="step-desc">Telechargez le QR en PNG ou imprimez. Scan = lecture directe ou saisie PIN.</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-tab="gen"    onclick="showTab('gen',this)">Generateur</button>
+  <button class="tab"        data-tab="comp"   onclick="showTab('comp',this)">Compresseur</button>
+  <button class="tab"        data-tab="batch"  onclick="showTab('batch',this)">Multi-videos</button>
+  <button class="tab"        data-tab="github" onclick="showTab('github',this)">Guide GitHub</button>
+</div>
+
+<!-- PANEL GENERATEUR -->
+<div id="tab-gen" class="panel active">
+  <div class="card">
+    <div class="field-group">
+      <div class="field-label">URL de la video *</div>
+      <div style="display:flex;gap:8px;align-items:stretch">
+        <input type="url" id="video-url" placeholder="http://82.67.9.251:54486/share/.../video.mp4" oninput="checkVideoURL(this.value)" style="flex:1;min-width:0">
+        <a id="url-test-btn" href="#" target="_blank" rel="noopener"
+           onclick="return openVideoURL()"
+           class="btn btn-ghost" style="padding:11px 14px;flex-shrink:0;font-size:.8rem">
+          &#9654; Tester
+        </a>
+      </div>
+      <div id="url-gh-hint" style="display:none;margin-top:7px;background:rgba(232,85,85,.08);border:1px solid rgba(232,85,85,.25);border-radius:8px;padding:10px 12px;font-size:.78rem;color:var(--red);line-height:1.6">
+        <strong>&#9888; Attention</strong><br>
+        <span id="url-gh-msg"></span>
+      </div>
+      <div id="url-len-bar" style="margin-top:6px;display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+          <span style="font-size:.71rem;color:var(--mu)">Longueur URL</span>
+          <span id="url-len-val" style="font-family:'DM Mono',monospace;font-size:.71rem;font-weight:600">0 car.</span>
+        </div>
+        <div style="height:5px;background:var(--dim);border-radius:4px;overflow:hidden">
+          <div id="url-len-fill" style="height:100%;border-radius:4px;transition:width .25s,background .25s;width:0"></div>
+        </div>
+        <div id="url-len-tip" style="font-size:.7rem;margin-top:3px;color:var(--mu)"></div>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field-group" style="margin-bottom:0">
+        <div class="field-label">Titre (optionnel)</div>
+        <input type="text" id="qr-title" placeholder="Ma video">
+      </div>
+      <div class="field-group" style="margin-bottom:0">
+        <div class="field-label">Description (optionnelle)</div>
+        <input type="text" id="qr-desc" placeholder="Vacances, tutoriel...">
+      </div>
+    </div>
+
+    <div style="margin-top:16px">
+      <div class="field-label" style="margin-bottom:9px">Taille du QR Code</div>
+      <div class="size-sel">
+        <button class="size-opt"     onclick="setSize(128,this)">128 px</button>
+        <button class="size-opt sel" onclick="setSize(200,this)">200 px</button>
+        <button class="size-opt"     onclick="setSize(256,this)">256 px</button>
+        <button class="size-opt"     onclick="setSize(320,this)">320 px</button>
+        <button class="size-opt"     onclick="setSize(512,this)">512 px</button>
+      </div>
+    </div>
+
+    <div style="margin-top:16px">
+      <div class="field-label" style="margin-bottom:9px">Couleur</div>
+      <div class="color-opts" id="color-opts">
+        <div class="csw sel" data-fg="#000000" data-bg="#ffffff" style="background:#000"></div>
+        <div class="csw" data-fg="#1a1a2e" data-bg="#ffffff" style="background:#1a1a2e"></div>
+        <div class="csw" data-fg="#2d4a22" data-bg="#ffffff" style="background:#2d4a22"></div>
+        <div class="csw" data-fg="#6b2020" data-bg="#ffffff" style="background:#6b2020"></div>
+        <div class="csw" data-fg="#0c0c0e" data-bg="#f5a623" style="background:linear-gradient(135deg,#0c0c0e 50%,#f5a623 50%)"></div>
+        <div class="csw" data-fg="#f5a623" data-bg="#0c0c0e" style="background:linear-gradient(135deg,#f5a623 50%,#0c0c0e 50%)"></div>
+      </div>
+    </div>
+
+    <!-- Info mode direct -->
+    <div style="margin-top:16px;background:rgba(245,166,35,.07);border:1px solid rgba(245,166,35,.2);border-radius:10px;padding:13px 15px;display:flex;gap:9px;align-items:flex-start">
+      <span style="color:var(--amb);flex-shrink:0">&#9432;</span>
+      <span style="font-size:.79rem;color:var(--mu);line-height:1.55">Le QR encode l'URL directe de la video. Le scan ouvre le player natif Android. Pour le mode PIN, hebergez VideoQR.html sur <strong style="color:var(--tx)">GitHub Pages</strong> (voir onglet Guide).</span>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="generateQR()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="4" height="4"/></svg>
+        Generer le QR Code
+      </button>
+      <button class="btn btn-ghost" onclick="clearAll()">Effacer</button>
+    </div>
+  </div>
+
+  <!-- QR RESULT -->
+  <div class="qr-section" id="qr-output">
+    <div id="qr-mode-bar" style="display:none;border-radius:12px;padding:14px 18px;margin-bottom:12px;align-items:center;gap:12px">
+      <span id="qr-mode-icon" style="font-size:1.6rem;flex-shrink:0"></span>
+      <div>
+        <div id="qr-mode-title" style="font-weight:700;font-size:.95rem"></div>
+        <div id="qr-mode-sub" style="font-size:.75rem;margin-top:2px;opacity:.8"></div>
+      </div>
+    </div>
+    <div class="qr-card">
+      <div class="qr-box"><div id="qr-container"></div></div>
+      <div class="qr-info">
+        <h3 id="out-title">QR Code genere</h3>
+        <div class="qr-meta" id="qr-meta">
+          <span class="badge badge-grn">&#10003; Pret a partager</span>
+          <span class="badge badge-amb" id="out-size">200 x 200 px</span>
+        </div>
+        <div class="qr-url" id="out-url"></div>
+        <p id="out-desc" style="font-size:.79rem;color:var(--mu);margin-bottom:13px;display:none"></p>
+        <div class="btn-row" id="qr-btn-row" style="margin-top:0">
+          <button class="btn btn-primary" onclick="downloadPNG()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            PNG
+          </button>
+          <button class="btn btn-ghost" onclick="downloadSVG()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            SVG
+          </button>
+          <button class="btn btn-ghost" onclick="copyURL()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copier URL
+          </button>
+          <button class="btn btn-ghost" onclick="printQR()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Imprimer
+          </button>
+          <button class="btn btn-red" onclick="openDelModal()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            Supprimer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div><!-- /tab-gen -->
+
+<!-- PANEL COMPRESSEUR -->
+<div id="tab-comp" class="panel">
+  <div class="card">
+    <div class="field-label" style="margin-bottom:11px">Selectionner une video depuis votre appareil</div>
+    <div class="file-drop" id="comp-drop" onclick="document.getElementById('comp-input').click()">
+      <input type="file" id="comp-input" accept="video/*" style="display:none" onchange="onFileSelect(this.files[0])">
+      <div class="fd-icon">&#127916;</div>
+      <div class="fd-label" id="fd-label">Cliquer ou glisser une video ici</div>
+      <div class="fd-sub">MP4, MOV, AVI, MKV, WebM, 3GP...</div>
+    </div>
+    <div class="vinfo" id="comp-vinfo" style="display:none">
+      <div class="vi"><div class="vi-v" id="vi-res">--</div><div class="vi-k">Resolution</div></div>
+      <div class="vi"><div class="vi-v" id="vi-dur">--</div><div class="vi-k">Duree</div></div>
+      <div class="vi"><div class="vi-v" id="vi-sz">--</div><div class="vi-k">Taille</div></div>
+      <div class="vi"><div class="vi-v" id="vi-name" style="font-size:.68rem">--</div><div class="vi-k">Fichier</div></div>
+    </div>
+  </div>
+  <div class="card" id="comp-card" style="display:none">
+    <div class="field-label" style="margin-bottom:11px">Format cible</div>
+    <div class="preset-grid">
+      <div class="pc" data-p="story"    onclick="selPreset('story',this)"><div class="pc-icon">&#128247;</div><div class="pc-name">Story TikTok</div><div class="pc-lbl">9:16 / 5 Mb/s</div></div>
+      <div class="pc" data-p="square"   onclick="selPreset('square',this)"><div class="pc-icon">&#11036;</div><div class="pc-name">Post carre</div><div class="pc-lbl">1:1 / 3.5 Mb/s</div></div>
+      <div class="pc sel" data-p="land" onclick="selPreset('land',this)"><div class="pc-icon">&#128250;</div><div class="pc-name">YouTube FB</div><div class="pc-lbl">16:9 / 5 Mb/s</div></div>
+      <div class="pc" data-p="twitter"  onclick="selPreset('twitter',this)"><div class="pc-icon">&#128038;</div><div class="pc-name">Twitter X</div><div class="pc-lbl">16:9 / 2.5 Mb/s</div></div>
+      <div class="pc" data-p="compact"  onclick="selPreset('compact',this)"><div class="pc-icon">&#128172;</div><div class="pc-name">WhatsApp</div><div class="pc-lbl">compact / 1 Mb/s</div></div>
+    </div>
+    <div class="info-note"><strong>Compression dans le navigateur</strong> via MediaRecorder. Sortie en WebM. L'audio est preserve si possible.</div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="comp-btn" onclick="startCompress()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="8 12 12 16 16 12"/><line x1="12" y1="8" x2="12" y2="16"/></svg>
+        Compresser
+      </button>
+      <button class="btn btn-ghost" onclick="cancelCompress()">Annuler</button>
+    </div>
+    <div id="comp-prog" style="display:none;margin-top:16px">
+      <div class="prog-row" style="margin-bottom:5px">
+        <span id="comp-prog-lbl" style="color:var(--mu)">Compression...</span>
+        <span id="comp-prog-pct" style="font-family:'DM Mono',monospace;color:var(--amb);font-weight:600">0%</span>
+      </div>
+      <div class="prog-wrap"><div class="prog-fill" id="comp-prog-fill"></div></div>
+    </div>
+    <div id="comp-result" style="display:none;margin-top:16px">
+      <div class="res-box">
+        <div style="font-size:.81rem;font-weight:700;color:var(--grn);margin-bottom:9px">&#10003; Compression terminee</div>
+        <div class="res-grid">
+          <div class="rg"><div class="rg-v" id="res-sz">--</div><div class="rg-k">Taille finale</div></div>
+          <div class="rg"><div class="rg-v g" id="res-ratio">--</div><div class="rg-k">Reduction</div></div>
+          <div class="rg"><div class="rg-v" id="res-name" style="font-size:.7rem">--</div><div class="rg-k">Fichier</div></div>
+        </div>
+        <div class="btn-row" style="margin-top:0">
+          <button class="btn btn-primary" id="res-dl">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Telecharger la video
+          </button>
+          <button class="btn btn-ghost" onclick="showTab('gen',null)">&#8594; Generateur QR</button>
+        </div>
+        <div class="info-note" style="margin-top:10px">Uploadez ce fichier sur <strong>GitHub Releases</strong>, copiez l'URL, collez-la dans le <strong>Generateur</strong>.</div>
+      </div>
+    </div>
+  </div>
+</div><!-- /tab-comp -->
+
+<!-- PANEL MULTI-VIDEOS -->
+<div id="tab-batch" class="panel">
+  <div class="card">
+    <p style="font-size:.83rem;color:var(--mu);margin-bottom:16px">Generez plusieurs QR codes en une fois. Cliquez sur une carte pour telecharger.</p>
+    <div class="batch-list" id="batch-list">
+      <div class="batch-item">
+        <input type="url" placeholder="https://... (URL video)" class="b-url">
+        <input type="text" placeholder="Nom / label" class="b-name">
+        <button class="batch-rm" onclick="removeRow(this)">x</button>
+      </div>
+      <div class="batch-item">
+        <input type="url" placeholder="https://... (URL video)" class="b-url">
+        <input type="text" placeholder="Nom / label" class="b-name">
+        <button class="batch-rm" onclick="removeRow(this)">x</button>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="addRow()">+ Ajouter</button>
+      <button class="btn btn-primary" onclick="generateBatch()">Generer tous</button>
+    </div>
+  </div>
+  <div id="batch-results" class="batch-results"></div>
+</div>
+
+<!-- PANEL GUIDE GITHUB -->
+<div id="tab-github" class="panel">
+
+  <!-- PARTIE 1 : GitHub Pages pour le viewer PIN -->
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <div style="background:var(--grn);color:#0c0c0e;border-radius:8px;padding:3px 10px;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase">Etape A</div>
+      <p style="font-size:.9rem;font-weight:600;color:var(--tx)">GitHub Pages \u2014 Heberger VideoQR.html (pour le mode PIN)</p>
+    </div>
+    <p style="font-size:.81rem;color:var(--mu);margin-bottom:18px">Gratuit, permanent. Le scan du QR ouvre la page dans Chrome au lieu de la telecharger. Les videos restent sur votre Freebox.</p>
+
+    <div class="gh-steps">
+      <div class="gh-step">
+        <div class="gh-num">1</div>
+        <div class="gh-text">Allez sur <strong>github.com</strong>, connectez-vous. Cliquez sur <strong>+</strong> en haut a droite \u2192 <strong>New repository</strong>. Nommez-le <code>videoqr</code>, cochez <strong>Public</strong>, cliquez <strong>Create repository</strong>.</div>
+      </div>
+      <div class="gh-step">
+        <div class="gh-num">2</div>
+        <div class="gh-text">Dans votre nouveau depot, cliquez sur <strong>Add file</strong> \u2192 <strong>Upload files</strong>. Glissez ce fichier <strong>VideoQR.html</strong> dans la zone, puis cliquez <strong>Commit changes</strong>.</div>
+      </div>
+      <div class="gh-step">
+        <div class="gh-num">3</div>
+        <div class="gh-text">Cliquez sur <strong>Settings</strong> (onglet en haut du depot) \u2192 dans le menu gauche cliquez <strong>Pages</strong> \u2192 sous <em>Branch</em> selectionnez <strong>main</strong> \u2192 cliquez <strong>Save</strong>.</div>
+      </div>
+      <div class="gh-step">
+        <div class="gh-num">4</div>
+        <div class="gh-text">Attendez 1 a 2 minutes. Revenez sur <strong>Settings \u2192 Pages</strong>. Vous verrez une bandeau vert avec le message <em>"Your site is live at"</em> suivi de votre URL. <strong>C'est ici que se trouve le lien a copier.</strong><br><br>
+        L'URL ressemble exactement a :<br>
+        <code>https://VOTRE-PSEUDO.github.io/videoqr/VideoQR.html</code><br><br>
+        Remplacez <strong>VOTRE-PSEUDO</strong> par votre nom d'utilisateur GitHub (visible en haut a droite de github.com apres connexion).</div>
+      </div>
+      <div class="gh-step">
+        <div class="gh-num">5</div>
+        <div class="gh-text">Copiez cette URL. Dans VideoQR, cochez <strong>Proteger par code PIN</strong> \u2192 collez l'URL dans le champ <strong>URL de VideoQR.html</strong>. Generez votre QR. Le scan ouvrira desormais la page correctement dans Chrome.</div>
+      </div>
+    </div>
+
+    <!-- Encart ou trouver l'URL -->
+    <div style="margin-top:16px;background:rgba(62,207,142,.07);border:2px solid rgba(62,207,142,.3);border-radius:12px;padding:16px">
+      <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--grn);margin-bottom:10px">&#128204; Ou trouver l'URL GitHub Pages</div>
+      <div style="font-size:.82rem;line-height:1.8;color:var(--tx)">
+        <strong>1.</strong> github.com \u2192 votre depot <code>videoqr</code><br>
+        <strong>2.</strong> Onglet <strong>Settings</strong> \u2192 menu gauche \u2192 <strong>Pages</strong><br>
+        <strong>3.</strong> Bandeau vert : <em>"Your site is live at <u>https://...</u>"</em><br>
+        <strong>4.</strong> Ajoutez <code>/VideoQR.html</code> a la fin si absent<br><br>
+        <span style="color:var(--mu)">Exemple final :</span><br>
+        <code style="color:var(--amb)">https://aqualio.github.io/videoqr/VideoQR.html</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- PARTIE 2 : GitHub Releases pour les videos -->
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <div style="background:var(--amb);color:#0c0c0e;border-radius:8px;padding:3px 10px;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase">Etape B</div>
+      <p style="font-size:.9rem;font-weight:600;color:var(--tx)">GitHub Releases \u2014 Heberger les videos (optionnel)</p>
+    </div>
+    <p style="font-size:.81rem;color:var(--mu);margin-bottom:18px">Si vous ne voulez pas utiliser la Freebox pour les videos. Gratuit jusqu'a 2 Go par fichier, URL permanente.</p>
+
+    <div class="gh-steps">
+      <div class="gh-step">
+        <div class="gh-num">1</div>
+        <div class="gh-text">Dans votre depot GitHub (le meme <code>videoqr</code> ou un autre), cliquez sur <strong>Releases</strong> dans la colonne de droite \u2192 <strong>Create a new release</strong>.</div>
+      </div>
+      <div class="gh-step">
+        <div class="gh-num">2</div>
+        <div class="gh-text">Dans <strong>Choose a tag</strong>, tapez <code>v1.0</code> \u2192 cliquez <strong>Create new tag</strong>. Glissez votre fichier video dans la zone <strong>Attach binaries by dropping them here</strong>.</div>
+      </div>
+      <div class="gh-step">
+        <div class="gh-num">3</div>
+        <div class="gh-text">Cliquez <strong>Publish release</strong>. Attendez la fin de l'upload (barre de progression verte).</div>
+      </div>
+      <div class="gh-step">
+        <div class="gh-num">4</div>
+        <div class="gh-text">Sur la page de la release, repérez la section <strong>Assets</strong> tout en bas. <strong>Appuyez longtemps</strong> sur le nom du fichier video (Android) ou <strong>clic droit \u2192 Copier l'adresse du lien</strong> (PC).<br><br>
+        <span style="color:var(--red)">&#10007; Ne pas copier</span> depuis la barre d'adresse du navigateur \u2014 cette URL est temporaire.<br>
+        <span style="color:var(--grn)">&#10003; Copier</span> via clic droit sur le <strong>nom du fichier</strong> dans Assets.<br><br>
+        L'URL correcte ressemble a :<br>
+        <code style="color:var(--amb)">https://github.com/aqualio/videoqr/releases/download/v1.0/video.mp4</code>
+        </div>
+      </div>
+    </div>
+
+    <!-- Erreurs frequentes -->
+    <div style="margin-top:14px;background:rgba(232,85,85,.07);border:1px solid rgba(232,85,85,.2);border-radius:10px;padding:14px">
+      <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--red);margin-bottom:10px">&#9888; URLs a ne pas utiliser</div>
+      <div style="font-size:.79rem;line-height:1.9;color:var(--tx)">
+        <span style="color:var(--red)">&#10007;</span> <code style="background:var(--dim);padding:1px 5px;border-radius:3px;font-size:.73rem;color:var(--mu)">https://github.com/aqualio</code> \u2014 profil, pas une video<br>
+        <span style="color:var(--red)">&#10007;</span> <code style="background:var(--dim);padding:1px 5px;border-radius:3px;font-size:.73rem;color:var(--mu)">https://github.com/aqualio/videoqr</code> \u2014 page du depot<br>
+        <span style="color:var(--red)">&#10007;</span> <code style="background:var(--dim);padding:1px 5px;border-radius:3px;font-size:.73rem;color:var(--mu)">https://release-assets.githubusercontent.com/...</code> \u2014 URL temporaire JWT, expire !<br>
+        <span style="color:var(--grn)">&#10003;</span> <code style="background:var(--dim);padding:1px 5px;border-radius:3px;font-size:.73rem;color:var(--amb)">https://github.com/aqualio/videoqr/releases/download/v1.0/video.mp4</code>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /tab-github -->
+
+<footer>
+  <span>VideoQR &middot; 100% local, aucune donnee envoyee</span>
+  <span>QRCode.js + MediaRecorder API</span>
+</footer>
+</div><!-- /wrap -->
+</div><!-- /app-root -->
+
+<!-- MODAL SUPPRESSION -->
+<div class="modal-bg" id="del-modal" onclick="closeDelModal(event)">
+  <div class="modal-box">
+    <div class="modal-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#e85555" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+    </div>
+    <div class="modal-title">Supprimer ce QR Code ?</div>
+    <div class="modal-body">Le QR code et tous les champs seront effaces.<br><br>La video en ligne n'est <strong>pas</strong> supprimee.</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeDelModal()">Annuler</button>
+      <button class="btn btn-red" onclick="confirmDel()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        Confirmer
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- PRINT ZONE -->
+<div id="print-zone">
+  <div class="pz-title" id="pz-title"></div>
+  <div class="pz-desc" id="pz-desc"></div>
+  <div class="pz-qr"><img id="pz-img" src="" alt="QR Code"></div>
+  <div class="pz-url" id="pz-url"></div>
+  <div class="pz-hint">Scannez ce QR code pour acceder a la video</div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><div class="toast-dot"></div><span id="toast-msg">OK</span></div>
+
+<script>
+'use strict';
+
+/* ══ ETAT GLOBAL ══ */
+var qrSize = 200, qrFg = '#000000', qrBg = '#ffffff';
+var currentQR = null, currentURL = '';
+
+
+/* ══ OUTDOOR MODE ══ */
+(function() {
+  if (localStorage.getItem('vqr_od') === '1') {
+    document.body.classList.add('outdoor');
+    document.getElementById('od-sun').style.display = 'none';
+    document.getElementById('od-moon').style.display = 'inline';
+  }
+})();
+function toggleOutdoor() {
+  var on = document.body.classList.toggle('outdoor');
+  localStorage.setItem('vqr_od', on ? '1' : '0');
+  document.getElementById('od-sun').style.display  = on ? 'none'   : 'inline';
+  document.getElementById('od-moon').style.display = on ? 'inline' : 'none';
+}
+
+/* ══ TABS ══ */
+function showTab(name, btn) {
+  document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+  var panel = document.getElementById('tab-' + name);
+  if (panel) panel.classList.add('active');
+  if (btn) btn.classList.add('active');
+  else {
+    document.querySelectorAll('.tab').forEach(function(t) {
+      if (t.dataset.tab === name) t.classList.add('active');
+    });
+  }
+}
+
+/* ══ SIZE / COLOR ══ */
+function setSize(s, btn) {
+  qrSize = s;
+  document.querySelectorAll('.size-opt').forEach(function(b) { b.classList.remove('sel'); });
+  if (btn) btn.classList.add('sel');
+}
+document.querySelectorAll('.csw').forEach(function(sw) {
+  sw.addEventListener('click', function() {
+    document.querySelectorAll('.csw').forEach(function(s) { s.classList.remove('sel'); });
+    sw.classList.add('sel');
+    qrFg = sw.dataset.fg;
+    qrBg = sw.dataset.bg;
+  });
+});
+
+/* ══ VALIDATION URL ══ */
+function checkVideoURL(url) {
+  var hint = document.getElementById('url-gh-hint');
+  var msg  = document.getElementById('url-gh-msg');
+  var bar  = document.getElementById('url-len-bar');
+  var fill = document.getElementById('url-len-fill');
+  var valEl= document.getElementById('url-len-val');
+  var tip  = document.getElementById('url-len-tip');
+  if (url && url.length > 0) {
+    bar.style.display = 'block';
+    var len = url.length;
+    valEl.textContent = len + ' car.';
+    var pct = Math.min(len / 800 * 100, 100);
+    fill.style.width = pct + '%';
+    if (len <= 200)      { fill.style.background='var(--grn)'; valEl.style.color='var(--grn)'; tip.textContent='Excellent \u2014 QR tres lisible'; }
+    else if (len <= 500) { fill.style.background='var(--amb)'; valEl.style.color='var(--amb)'; tip.textContent='Correct \u2014 selectionnez 512px pour le QR'; }
+    else                 { fill.style.background='var(--red)'; valEl.style.color='var(--red)'; tip.textContent='Long \u2014 utilisez 512px et testez le scan'; }
+  } else {
+    bar.style.display = 'none';
+  }
+  if (!url) { hint.style.display='none'; return; }
+  if (url.includes('release-assets.githubusercontent.com') || url.includes('release-assets.github')) {
+    msg.innerHTML = 'URL temporaire (JWT) \u2014 elle expire. Utilisez /releases/download/.';
+    hint.style.display='block'; return;
+  }
+  if (url.length > 800) {
+    msg.innerHTML = 'URL tres longue (' + url.length + ' car.) \u2014 utilisez la taille 512px et testez le scan. Ou raccourcissez avec <a href="https://tinyurl.com" target="_blank" style="color:var(--amb)">tinyurl.com</a>.';
+    hint.style.display='block'; return;
+  }
+  if (!url.includes('github.com')) { hint.style.display='none'; return; }
+  var path = url.replace(/https?:\/\/github\.com\//, '').split('/').filter(Boolean);
+  if (path.length === 1) { msg.textContent = 'Page profil GitHub, pas un fichier video.'; hint.style.display='block'; return; }
+  if (path.length === 2) { msg.textContent = 'Page du depot, pas un fichier video.'; hint.style.display='block'; return; }
+  if (path[2]==='blob' || path[2]==='tree') { msg.textContent = 'Lien vers la vue fichier. Utilisez /releases/download/.'; hint.style.display='block'; return; }
+  if (path.length >= 3 && path[2] !== 'releases') { msg.textContent = "L'URL ne contient pas /releases/download/."; hint.style.display='block'; return; }
+  hint.style.display='none';
+}
+
+function openVideoURL() {
+  var url = document.getElementById('video-url').value.trim();
+  if (!url || !url.startsWith('http')) { toast("Entrez d'abord une URL valide", true); return false; }
+  var btn = document.getElementById('url-test-btn');
+  btn.href = url;
+  return true;
+}
+
+/* ══ GENERATION QR ══ */
+function _buildQR(url) {
+  var len = url.length;
+  if (len > 900) {
+    throw new Error('URL trop longue (' + len + ' car.) \u2014 non scannable.');
+  }
+  var size = qrSize;
+  if (len > 500) size = Math.max(size, 512);
+  else if (len > 300) size = Math.max(size, 320);
+  else if (len > 200) size = Math.max(size, 256);
+  var container = document.getElementById('qr-container');
+  container.innerHTML = '';
+  currentQR = new QRCode(container, {
+    text: url, width: size, height: size,
+    colorDark: qrFg, colorLight: qrBg,
+    correctLevel: QRCode.CorrectLevel.L
+  });
+  var sb = document.getElementById('out-size');
+  if (sb) sb.textContent = size + ' x ' + size + ' px' + (size !== qrSize ? ' (auto)' : '');
+}
+
+function _showQRResult(url, title, desc, extraBadge) {
+  currentURL = url;
+  document.getElementById('out-title').textContent = title;
+  /* Afficher un resume de l'URL, pas la data: URI complete */
+  var display = url.startsWith('data:') ? '[Mini-page PIN auto-contenue \u2014 ' + url.length + ' car.]' : url;
+  document.getElementById('out-url').textContent = display;
+  var dEl = document.getElementById('out-desc');
+  if (desc) { dEl.textContent = desc; dEl.style.display = 'block'; }
+  else { dEl.style.display = 'none'; }
+
+  var bar   = document.getElementById('qr-mode-bar');
+  var icon  = document.getElementById('qr-mode-icon');
+  var mtitl = document.getElementById('qr-mode-title');
+  var msub  = document.getElementById('qr-mode-sub');
+  bar.style.display = 'flex';
+  if (extraBadge) {
+    bar.style.cssText = 'display:flex;border-radius:12px;padding:14px 18px;margin-bottom:12px;align-items:center;gap:12px;background:rgba(62,207,142,.1);border:2px solid rgba(62,207,142,.4)';
+    icon.textContent  = '\uD83D\uDD12';
+    mtitl.style.color = 'var(--grn)';
+    mtitl.textContent = 'MODE PIN \u2014 Scan \u2192 Saisie PIN \u2192 Lecture video';
+    msub.style.color  = 'var(--grn)';
+    msub.textContent  = 'Mini-page auto-contenue. Aucune dependance serveur. Fonctionne partout.';
+  } else {
+    bar.style.cssText = 'display:flex;border-radius:12px;padding:14px 18px;margin-bottom:12px;align-items:center;gap:12px;background:rgba(245,166,35,.1);border:2px solid rgba(245,166,35,.4)';
+    icon.textContent  = '\u25B6\uFE0F';
+    mtitl.style.color = 'var(--amb)';
+    mtitl.textContent = 'MODE DIRECT \u2014 Scan \u2192 Lecture dans le player natif';
+    msub.style.color  = 'var(--mu)';
+    msub.textContent  = 'Le QR encode l\'URL MP4 directe. Le player natif Android ouvre la video.';
+  }
+
+  var old = document.getElementById('extra-badge');
+  if (old) old.remove();
+  if (extraBadge) {
+    var m = document.getElementById('qr-meta');
+    var sp = document.createElement('span');
+    sp.id = 'extra-badge'; sp.className = 'badge badge-blue'; sp.textContent = extraBadge;
+    m.appendChild(sp);
+  }
+  /* Bouton tester le viewer PIN */
+  var oldTest = document.getElementById('test-link');
+  if (oldTest) oldTest.remove();
+  if (extraBadge && currentURL.startsWith('data:')) {
+    var row = document.getElementById('qr-btn-row');
+    var a = document.createElement('a');
+    a.id = 'test-link'; a.className = 'btn btn-green'; a.href = currentURL; a.target = '_blank';
+    a.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Tester le viewer PIN';
+    row.appendChild(a);
+  }
+  var sec = document.getElementById('qr-output');
+  sec.classList.add('visible');
+  sec.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function generateQR() {
+  var url = document.getElementById('video-url').value.trim();
+  if (!url) { toast('Entrez une URL de video', true); return; }
+  if (!url.startsWith('http')) { toast('URL invalide \u2014 doit commencer par http://', true); return; }
+  if (url.includes('release-assets.githubusercontent.com')) {
+    toast('URL temporaire non utilisable \u2014 utilisez /releases/download/', true); return;
+  }
+  if (url.length > 800) {
+    toast('URL trop longue (' + url.length + ' car.) \u2014 raccourcissez avec bit.ly', true); return;
+  }
+  var title = document.getElementById('qr-title').value.trim() || 'Video';
+  var desc  = document.getElementById('qr-desc').value.trim();
+  try { _buildQR(url); } catch(e) { toast('Erreur QR : ' + e.message, true); return; }
+  _showQRResult(url, title, desc, null);
+}
+
+/* ══ ACTIONS QR ══ */
+function downloadPNG() {
+  var c = document.querySelector('#qr-container canvas');
+  if (!c) { toast('Generez d\'abord un QR code', true); return; }
+  var a = document.createElement('a');
+  a.download = 'videoqr_' + qrSize + 'px.png';
+  a.href = c.toDataURL('image/png');
+  a.click();
+  toast('PNG telecharge !');
+}
+function downloadSVG() {
+  if (!currentURL) { toast('Generez d\'abord un QR code', true); return; }
+  var c = document.querySelector('#qr-container canvas');
+  if (!c) return;
+  var d = c.toDataURL('image/png');
+  var svg = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"'
+    + ' width="' + qrSize + '" height="' + qrSize + '" viewBox="0 0 ' + qrSize + ' ' + qrSize + '">'
+    + '<image href="' + d + '" width="' + qrSize + '" height="' + qrSize + '"/></svg>';
+  var blob = new Blob([svg], { type: 'image/svg+xml' });
+  var a = document.createElement('a');
+  a.download = 'videoqr.svg'; a.href = URL.createObjectURL(blob); a.click();
+  setTimeout(function() { URL.revokeObjectURL(a.href); }, 5000);
+  toast('SVG telecharge !');
+}
+function copyURL() {
+  if (!currentURL) return;
+  navigator.clipboard.writeText(currentURL).then(function() { toast('URL copiee !'); });
+}
+function printQR() {
+  var c = document.querySelector('#qr-container canvas');
+  if (!c) { toast('Generez d\'abord un QR code', true); return; }
+  document.getElementById('pz-img').src    = c.toDataURL('image/png');
+  document.getElementById('pz-img').width  = Math.min(qrSize, 300);
+  document.getElementById('pz-title').textContent = document.getElementById('out-title').textContent;
+  var desc2 = document.getElementById('out-desc').textContent;
+  var pzd = document.getElementById('pz-desc');
+  pzd.textContent = desc2 || ''; pzd.style.display = desc2 ? 'block' : 'none';
+  document.getElementById('pz-url').textContent = currentURL.startsWith('data:') ? '(mini-page PIN auto-contenue)' : currentURL;
+  window.print();
+}
+function clearAll() {
+  document.getElementById('video-url').value = '';
+  document.getElementById('qr-title').value  = '';
+  document.getElementById('qr-desc').value   = '';
+  document.getElementById('qr-output').classList.remove('visible');
+  document.getElementById('qr-container').innerHTML = '';
+  var eb = document.getElementById('extra-badge'); if (eb) eb.remove();
+  var tl = document.getElementById('test-link');   if (tl) tl.remove();
+  currentURL = ''; currentQR = null;
+}
+
+/* ══ MODAL SUPPRESSION ══ */
+function openDelModal() {
+  if (!currentURL) { toast('Aucun QR code a supprimer', true); return; }
+  document.getElementById('del-modal').classList.add('open');
+}
+function closeDelModal(e) {
+  if (e && e.target !== document.getElementById('del-modal')) return;
+  document.getElementById('del-modal').classList.remove('open');
+}
+function confirmDel() {
+  document.getElementById('del-modal').classList.remove('open');
+  clearAll();
+  toast('QR code supprime');
+}
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') document.getElementById('del-modal').classList.remove('open');
+});
+
+/* ══ BATCH ══ */
+function addRow() {
+  var list = document.getElementById('batch-list');
+  var d = document.createElement('div'); d.className = 'batch-item';
+  d.innerHTML = '<input type="url" placeholder="https://..." class="b-url">'
+    + '<input type="text" placeholder="Nom / label" class="b-name">'
+    + '<button class="batch-rm" onclick="removeRow(this)">x</button>';
+  list.appendChild(d);
+}
+function removeRow(btn) {
+  var list = document.getElementById('batch-list');
+  if (list.children.length > 1) btn.closest('.batch-item').remove();
+}
+function generateBatch() {
+  var rows = document.querySelectorAll('.batch-item');
+  var res  = document.getElementById('batch-results');
+  res.innerHTML = '';
+  var n = 0;
+  rows.forEach(function(row) {
+    var url  = row.querySelector('.b-url').value.trim();
+    var name = row.querySelector('.b-name').value.trim() || url.split('/').pop() || 'video';
+    if (!url || !url.startsWith('http')) return;
+    var card = document.createElement('div'); card.className = 'brc';
+    var qd   = document.createElement('div'); qd.className = 'brc-qr';
+    var lbl  = document.createElement('div'); lbl.className = 'brc-lbl'; lbl.textContent = name;
+    card.appendChild(qd); card.appendChild(lbl); res.appendChild(card);
+    setTimeout(function() {
+      new QRCode(qd, { text: url, width: 110, height: 110, colorDark: '#000', colorLight: '#fff', correctLevel: QRCode.CorrectLevel.M });
+      card.addEventListener('click', function() {
+        setTimeout(function() {
+          var cv = qd.querySelector('canvas');
+          if (cv) { var a = document.createElement('a'); a.download = name.replace(/\s+/g, '_')+'_qr.png'; a.href = cv.toDataURL('image/png'); a.click(); }
+        }, 100);
+      });
+    }, 50);
+    n++;
+  });
+  if (!n) toast('Ajoutez au moins une URL valide', true);
+  else toast(n + ' QR code(s) genere(s) \u2014 cliquer pour telecharger');
+}
+
+/* ══ COMPRESSEUR ══ */
+var _compFile = null, _compPreset = 'land', _compressing = false;
+var _compVid = null, _compAudioCtx = null, _compRec = null, _compRAF = null;
+var PRESETS = {
+  story:   { w:1080, h:1920, br:5000000 },
+  square:  { w:1080, h:1080, br:3500000 },
+  land:    { w:1920, h:1080, br:5000000 },
+  twitter: { w:1280, h:720,  br:2500000 },
+  compact: { w:848,  h:480,  br:1000000 }
+};
+function fmtSz(b) { return b < 1048576 ? (b/1024).toFixed(1)+' Ko' : (b/1048576).toFixed(1)+' Mo'; }
+function fmtDur(s) { var m=Math.floor(s/60); return m+':'+(Math.floor(s%60)<10?'0':'')+Math.floor(s%60); }
+function onFileSelect(f) {
+  if (!f) return;
+  if (!f.type.startsWith('video/')) { toast('Selectionnez un fichier video', true); return; }
+  _compFile = f;
+  document.getElementById('vi-sz').textContent   = fmtSz(f.size);
+  document.getElementById('vi-name').textContent = f.name;
+  var tmp = document.createElement('video');
+  tmp.src = URL.createObjectURL(f);
+  tmp.onloadedmetadata = function() {
+    document.getElementById('vi-res').textContent = tmp.videoWidth+'x'+tmp.videoHeight;
+    document.getElementById('vi-dur').textContent = fmtDur(tmp.duration);
+    URL.revokeObjectURL(tmp.src);
+  };
+  document.getElementById('fd-label').textContent = f.name;
+  document.getElementById('comp-vinfo').style.display = 'grid';
+  document.getElementById('comp-card').style.display  = 'block';
+  document.getElementById('comp-result').style.display = 'none';
+}
+function selPreset(k, el) {
+  _compPreset = k;
+  document.querySelectorAll('.pc').forEach(function(c) { c.classList.remove('sel'); });
+  if (el) el.classList.add('sel');
+}
+function _getMime() {
+  var types = ['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm','video/mp4'];
+  for (var i=0; i<types.length; i++) if (MediaRecorder.isTypeSupported(types[i])) return types[i];
+  return 'video/webm';
+}
+function startCompress() {
+  if (!_compFile) { toast('Selectionnez une video', true); return; }
+  if (_compressing) return;
+  var preset = PRESETS[_compPreset];
+  _compressing = true;
+  var btn = document.getElementById('comp-btn');
+  btn.disabled = true; btn.textContent = 'En cours...';
+  document.getElementById('comp-prog').style.display   = 'block';
+  document.getElementById('comp-result').style.display = 'none';
+  document.getElementById('comp-prog-fill').style.width = '0%';
+  document.getElementById('comp-prog-pct').textContent  = '0%';
+  _compVid = document.createElement('video');
+  _compVid.src = URL.createObjectURL(_compFile);
+  _compVid.playsInline = true;
+  _compVid.onloadedmetadata = function() {
+    var sw = _compVid.videoWidth, sh = _compVid.videoHeight, dur = _compVid.duration;
+    var sc = Math.min(preset.w/sw, preset.h/sh, 1);
+    var ow = Math.round(sw*sc/2)*2, oh = Math.round(sh*sc/2)*2;
+    document.getElementById('comp-prog-lbl').textContent = 'Compression -> '+ow+'x'+oh;
+    var canvas = document.createElement('canvas');
+    canvas.width = ow; canvas.height = oh;
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#000'; ctx.fillRect(0,0,ow,oh);
+    var audioTracks = [];
+    try {
+      _compAudioCtx = new AudioContext();
+      var src  = _compAudioCtx.createMediaElementSource(_compVid);
+      var dest = _compAudioCtx.createMediaStreamDestination();
+      src.connect(dest); audioTracks = dest.stream.getAudioTracks();
+    } catch(e) {}
+    var mime = _getMime();
+    var stream = new MediaStream(canvas.captureStream(30).getVideoTracks().concat(audioTracks));
+    var opts = { mimeType: mime, videoBitsPerSecond: preset.br };
+    if (audioTracks.length) opts.audioBitsPerSecond = 128000;
+    _compRec = new MediaRecorder(stream, opts);
+    var chunks = [];
+    _compRec.ondataavailable = function(e) { if (e.data.size>0) chunks.push(e.data); };
+    _compRec.onstop = function() {
+      var blob  = new Blob(chunks, { type: mime });
+      var ext   = mime.indexOf('mp4')!==-1 ? 'mp4' : 'webm';
+      var oname = _compFile.name.replace(/\.[^.]+$/, '') + '_' + _compPreset + '.' + ext;
+      document.getElementById('res-sz').textContent    = fmtSz(blob.size);
+      var ratio = Math.round((1 - blob.size/_compFile.size)*100);
+      document.getElementById('res-ratio').textContent = (ratio>0?'-':'+') + Math.abs(ratio) + '%';
+      document.getElementById('res-name').textContent  = oname;
+      document.getElementById('res-dl').onclick = function() {
+        var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = oname; a.click();
+        setTimeout(function() { URL.revokeObjectURL(a.href); }, 10000);
+      };
+      document.getElementById('comp-prog').style.display   = 'none';
+      document.getElementById('comp-result').style.display = 'block';
+      toast('Compression terminee !');
+      _cleanComp();
+    };
+    _compRec.start(250);
+    var pInt = setInterval(function() {
+      if (dur>0) {
+        var pct = Math.min((_compVid.currentTime/dur)*100, 99);
+        document.getElementById('comp-prog-fill').style.width = pct+'%';
+        document.getElementById('comp-prog-pct').textContent  = Math.round(pct)+'%';
+      }
+    }, 400);
+    function draw() {
+      if (!_compVid.paused && !_compVid.ended) {
+        var sc2=Math.min(ow/sw,oh/sh), dw=sw*sc2, dh=sh*sc2, dx=(ow-dw)/2, dy=(oh-dh)/2;
+        ctx.fillStyle='#000'; ctx.fillRect(0,0,ow,oh);
+        ctx.drawImage(_compVid,dx,dy,dw,dh);
+      }
+      if (!_compVid.ended) _compRAF = requestAnimationFrame(draw);
+    }
+    _compVid.onended = function() {
+      clearInterval(pInt); cancelAnimationFrame(_compRAF);
+      document.getElementById('comp-prog-fill').style.width = '100%';
+      document.getElementById('comp-prog-pct').textContent  = '100%';
+      setTimeout(function() { if (_compRec&&_compRec.state!=='inactive') _compRec.stop(); }, 300);
+    };
+    _compVid.play().then(draw).catch(function(e) {
+      toast('Erreur lecture : '+e.message, true); _cleanComp();
+    });
+  };
+  _compVid.onerror = function() { toast('Impossible de lire ce fichier', true); _cleanComp(); };
+}
+function cancelCompress() {
+  if (!_compressing) return;
+  if (_compVid) _compVid.pause();
+  if (_compRAF) cancelAnimationFrame(_compRAF);
+  if (_compRec && _compRec.state !== 'inactive') _compRec.stop();
+  document.getElementById('comp-prog').style.display = 'none';
+  _cleanComp();
+  toast('Annule', true);
+}
+function _cleanComp() {
+  _compressing = false;
+  var btn = document.getElementById('comp-btn');
+  if (btn) { btn.disabled = false; btn.textContent = 'Compresser'; }
+  if (_compVid) { _compVid.pause(); _compVid.src=''; _compVid=null; }
+  if (_compAudioCtx) { try{_compAudioCtx.close();}catch(e){} _compAudioCtx=null; }
+  if (_compRAF) { cancelAnimationFrame(_compRAF); _compRAF=null; }
+  _compRec = null;
+}
+(function() {
+  var drop = document.getElementById('comp-drop');
+  if (!drop) return;
+  drop.addEventListener('dragover',  function(e) { e.preventDefault(); drop.classList.add('drag'); });
+  drop.addEventListener('dragleave', function()  { drop.classList.remove('drag'); });
+  drop.addEventListener('drop', function(e) {
+    e.preventDefault(); drop.classList.remove('drag');
+    var f = e.dataTransfer.files[0]; if (f) onFileSelect(f);
+  });
+})();
+
+/* ══ TOAST ══ */
+var _toastT = null;
+function toast(msg, isErr) {
+  var el  = document.getElementById('toast');
+  var dot = el.querySelector('.toast-dot');
+  document.getElementById('toast-msg').textContent = msg;
+  dot.style.background = isErr ? 'var(--red)' : 'var(--grn)';
+  el.classList.add('show');
+  if (_toastT) clearTimeout(_toastT);
+  _toastT = setTimeout(function() { el.classList.remove('show'); }, 3500);
+}
+</script>
+</body>
+</html>

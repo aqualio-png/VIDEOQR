@@ -1021,18 +1021,18 @@ function verifyPIN() {
         };
       }
 
-      /* Bouton telecharger : ouvre l URL brute, Chrome propose telechargement */
+      /* Bouton telecharger : intent sans package = Chrome propose toutes les apps */
       var dlBtn = document.getElementById('v-dl-btn');
       if (dlBtn) {
         dlBtn.onclick = function() {
-          /* Creer un lien temporaire et simuler le clic */
-          var a = document.createElement('a');
-          a.href = vd.u;
-          a.download = fn;
-          a.target = '_blank';
-          document.body.appendChild(a);
-          a.click();
-          setTimeout(function() { document.body.removeChild(a); }, 1000);
+          var scheme = vd.u.startsWith('https') ? 'https' : 'http';
+          var intentUrl = 'intent://' + vd.u.replace(/^https?:\/\//, '')
+            + '#Intent;scheme=' + scheme
+            + ';type=video/mp4'
+            + ';action=android.intent.action.VIEW'
+            + ';S.browser_fallback_url=' + encodeURIComponent(vd.u)
+            + ';end';
+          window.location.href = intentUrl;
         };
       }
     } else {

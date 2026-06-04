@@ -259,15 +259,12 @@ body.outdoor .pd{background:#fff}
         <div class="v-ok-ic">&#10003;</div>
         <div class="v-ok-ttl">Acces accorde</div>
         <div class="v-ok-sub" id="v-ok-sub"></div>
-        <a class="v-dl" id="v-open-btn" href="#" target="_blank" rel="noopener"
-          style="background:var(--amb);color:#0c0c0e;margin-top:10px">
+        <button class="v-dl" id="v-open-btn"
+          style="background:var(--amb);color:#0c0c0e;border:none;cursor:pointer;width:100%;margin-top:10px">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          Lire la video
-        </a>
-        <a class="v-open" id="v-dl-btn" href="#" download>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Telecharger la video
-        </a>
+          Lire / Telecharger la video
+        </button>
+        <p style="font-size:.72rem;color:var(--mu);margin-top:8px;line-height:1.5">Le player natif Android s'ouvre et propose lecture ou telechargement.</p>
       </div>
     </div>
 
@@ -1002,12 +999,12 @@ function verifyPIN() {
       var fn = '';
       try { fn = decodeURIComponent(vd.u.split('/').pop().split('?')[0]); } catch(e) {}
       if (!fn || fn.indexOf('.') < 0) fn = 'video.mp4';
-      /* Bouton Lire : ouvre dans le player natif Android */
+      /* Bouton unique : navigation directe vers le MP4
+         Chrome Android propose alors lecture ou telechargement nativement */
       var openBtn = document.getElementById('v-open-btn');
-      if (openBtn) openBtn.href = vd.u;
-      /* Bouton Telecharger */
-      var dl = document.getElementById('v-dl-btn');
-      dl.href = vd.u; dl.setAttribute('download', fn);
+      if (openBtn) {
+        openBtn.onclick = function() { window.location.href = vd.u; };
+      }
       document.getElementById('v-ok-sub').textContent = '\u00AB '+(vd.t||'video')+'\u00BB';
     } else {
       window._att++;

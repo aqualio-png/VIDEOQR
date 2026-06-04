@@ -262,9 +262,13 @@ body.outdoor .pd{background:#fff}
         <button class="v-dl" id="v-open-btn"
           style="background:var(--amb);color:#0c0c0e;border:none;cursor:pointer;width:100%;margin-top:10px">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          Lire / Telecharger la video
+          Ouvrir avec VLC / player
         </button>
-        <p style="font-size:.72rem;color:var(--mu);margin-top:8px;line-height:1.5">Le player natif Android s'ouvre et propose lecture ou telechargement.</p>
+        <button class="v-open" id="v-dl-btn"
+          style="background:transparent;border:1px solid var(--bdr);cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:500;color:var(--mu)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Telecharger la video
+        </button>
       </div>
     </div>
 
@@ -999,13 +1003,38 @@ function verifyPIN() {
       var fn = '';
       try { fn = decodeURIComponent(vd.u.split('/').pop().split('?')[0]); } catch(e) {}
       if (!fn || fn.indexOf('.') < 0) fn = 'video.mp4';
-      /* Bouton unique : navigation directe vers le MP4
-         Chrome Android propose alors lecture ou telechargement nativement */
+
+      document.getElementById('v-ok-sub').textContent = '\u00AB '+(vd.t||'video')+'\u00BB';
+
+      /* Bouton VLC / player Android via intent:// */
       var openBtn = document.getElementById('v-open-btn');
       if (openBtn) {
-        openBtn.onclick = function() { window.location.href = vd.u; };
+        openBtn.onclick = function() {
+          /* intent:// permet a Chrome Android de proposer VLC ou tout player installe */
+          var intentUrl = 'intent://' + vd.u.replace(/^https?:\/\//, '')
+            + '#Intent;scheme=' + (vd.u.startsWith('https') ? 'https' : 'http')
+            + ';type=video/mp4'
+            + ';package=org.videolan.vlc'
+            + ';S.browser_fallback_url=' + encodeURIComponent(vd.u)
+            + ';end';
+          window.location.href = intentUrl;
+        };
       }
-      document.getElementById('v-ok-sub').textContent = '\u00AB '+(vd.t||'video')+'\u00BB';
+
+      /* Bouton telecharger : ouvre l URL brute, Chrome propose telechargement */
+      var dlBtn = document.getElementById('v-dl-btn');
+      if (dlBtn) {
+        dlBtn.onclick = function() {
+          /* Creer un lien temporaire et simuler le clic */
+          var a = document.createElement('a');
+          a.href = vd.u;
+          a.download = fn;
+          a.target = '_blank';
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(function() { document.body.removeChild(a); }, 1000);
+        };
+      }
     } else {
       window._att++;
       if (window._att >= window._max) {

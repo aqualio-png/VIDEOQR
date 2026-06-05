@@ -955,25 +955,12 @@ function generateQR() {
   var payload = JSON.stringify({ u: url, t: title, d: desc, s: pinSalt, h: pinHash });
   var encoded;
   try { encoded = b64uEnc(payload); } catch(e) { toast('Erreur encodage : ' + e.message, true); return; }
-  var pageURL = host.replace(/#.*$/, '') + '#v=' + encoded;
-
-  /* Forcer l ouverture dans Chrome Android via intent://
-     Quel que soit le scanner (Edge, appareil photo...), Chrome s ouvre */
-  var intentQR = 'intent://' + pageURL.replace(/^https?:\/\//, '')
-    + '#Intent;scheme=https'
-    + ';package=com.android.chrome'
-    + ';S.browser_fallback_url=' + encodeURIComponent(pageURL)
-    + ';end';
-
-  /* On stocke l URL lisible pour affichage/copie, mais on encode l intent dans le QR */
-  var qrURL = intentQR;
-  if (qrURL.length > 900) {
+  var qrURL = host.replace(/#.*$/, '') + '#v=' + encoded;
+  if (qrURL.length > 800) {
     toast('URL trop longue (' + qrURL.length + ' car.) \u2014 raccourcissez le titre ou la description', true); return;
   }
   try { _buildQR(qrURL); } catch(e) { toast('Erreur QR : ' + e.message, true); return; }
   _showQRResult(qrURL, title + ' \uD83D\uDD12', desc, '\uD83D\uDD12 PIN requis');
-  /* Surcharger l affichage URL avec la version lisible */
-  document.getElementById('out-url').textContent = pageURL;
 }
 
 /* ══ PIN GENERATION ══ */

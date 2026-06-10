@@ -1416,11 +1416,11 @@ function generateBatch() {
         var payload = JSON.stringify({ u: url, t: name, d: '', s: salt, h: h });
         var qrURL = host.replace(/#.*$/, '') + '#v=' + b64uEnc(payload);
         _batchData[id] = { url: url, name: name, pin: pin, qrURL: qrURL, isPin: true };
-        return { id: id, name: name, pin: pin, qrURL: qrURL };
+        return { id: id, url: url, name: name, pin: pin, qrURL: qrURL, isPin: true };
       });
     } else {
       _batchData[id] = { url: url, name: name, pin: '', qrURL: url, isPin: false };
-      p = Promise.resolve({ id: id, name: name, pin: '', qrURL: url });
+      p = Promise.resolve({ id: id, url: url, name: name, pin: '', qrURL: url, isPin: false });
     }
     promises.push(p);
   });
@@ -1501,9 +1501,12 @@ function _batchEmail(it) {
   }
   var mailto = 'mailto:' + to + '?subject=' + encodeURIComponent('Video : ' + it.name)
     + '&body=' + encodeURIComponent(corps);
-  var a = document.createElement('a'); a.href = mailto; a.style.display = 'none';
-  document.body.appendChild(a); a.click();
-  setTimeout(function(){ if(a.parentNode) document.body.removeChild(a); }, 1000);
+  var a = document.createElement('a');
+  a.href = mailto;
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 
 function _batchSMS(it) {
@@ -1514,9 +1517,12 @@ function _batchSMS(it) {
   if (!num || num.length < 6) { toast('Numero invalide', true); return; }
   var msg = 'Code PIN pour la video "' + it.name + '" : ' + it.pin;
   var smsUrl = 'sms:' + num + '?body=' + encodeURIComponent(msg);
-  var a = document.createElement('a'); a.href = smsUrl; a.style.display = 'none';
-  document.body.appendChild(a); a.click();
-  setTimeout(function(){ if(a.parentNode) document.body.removeChild(a); }, 1000);
+  var a = document.createElement('a');
+  a.href = smsUrl;
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 
 /* ══ COMPRESSEUR ══ */

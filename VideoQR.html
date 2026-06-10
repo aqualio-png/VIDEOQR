@@ -1209,10 +1209,15 @@ function sendEmail() {
       + 'Cliquez sur ce lien pour y acceder :\n' + currentURL + '\n\n'
       + 'Bonne journee.';
   }
-  var mailto = 'mailto:' + encodeURIComponent(to)
+  var mailto = 'mailto:' + to
     + '?subject=' + encodeURIComponent(sujet)
     + '&body=' + encodeURIComponent(corps);
-  window.location.href = mailto;
+  var a = document.createElement('a');
+  a.href = mailto;
+  a.target = '_blank';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){ document.body.removeChild(a); }, 500);
   toast('Ouverture de votre app email...');
 }
 
@@ -1224,9 +1229,12 @@ function sendSMS() {
   num = num.replace(/[^0-9+]/g, '');
   if (!num || num.length < 6) { toast('Numero invalide', true); return; }
   var msg = 'Code PIN pour la video "' + (currentTitle || 'Video') + '" : ' + currentPIN;
-  /* Format sms: compatible Android (separateur ?) et iOS (separateur &) */
   var smsUrl = 'sms:' + num + '?body=' + encodeURIComponent(msg);
-  window.location.href = smsUrl;
+  var a = document.createElement('a');
+  a.href = smsUrl;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){ document.body.removeChild(a); }, 500);
   toast('Ouverture de votre app SMS...');
 }
 function printQR() {

@@ -713,7 +713,49 @@ body.outdoor .pd{background:#fff}
   </div>
 </div>
 
-<!-- PRINT ZONE -->
+<!-- MODAL EMAIL -->
+<div class="modal-bg" id="email-modal" onclick="closeEmailModal(event)">
+  <div class="modal-box">
+    <div class="modal-icon" style="background:var(--amb-g);border-color:rgba(245,166,35,.3)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f5a623" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+    </div>
+    <div class="modal-title">Envoyer le QR par email</div>
+    <div class="modal-body">Saisissez l'adresse email du destinataire. Votre application mail s'ouvrira avec le message pre-rempli.</div>
+    <div class="field-group" style="margin-bottom:18px">
+      <input type="email" id="email-input" placeholder="destinataire@exemple.com" autocomplete="email"
+        style="width:100%;background:var(--bg);border:1px solid var(--bdr);border-radius:8px;color:var(--tx);font-family:'DM Mono',monospace;font-size:.9rem;padding:13px;outline:none">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeEmailModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="confirmEmail()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Ouvrir l'email
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL SMS -->
+<div class="modal-bg" id="sms-modal" onclick="closeSMSModal(event)">
+  <div class="modal-box">
+    <div class="modal-icon" style="background:rgba(74,158,255,.1);border-color:rgba(74,158,255,.3)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4a9eff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+    </div>
+    <div class="modal-title">Envoyer le PIN par SMS</div>
+    <div class="modal-body">Le code PIN <strong id="sms-pin-preview">----</strong> sera envoye. Saisissez le numero du destinataire. Votre app SMS s'ouvrira avec le message pre-rempli.</div>
+    <div class="field-group" style="margin-bottom:18px">
+      <input type="tel" id="sms-input" placeholder="06 12 34 56 78" autocomplete="tel"
+        style="width:100%;background:var(--bg);border:1px solid var(--bdr);border-radius:8px;color:var(--tx);font-family:'DM Mono',monospace;font-size:.9rem;padding:13px;outline:none">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeSMSModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="confirmSMS()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Ouvrir le SMS
+      </button>
+    </div>
+  </div>
+</div>
 <div id="print-zone">
   <div class="pz-title" id="pz-title"></div>
   <div class="pz-desc" id="pz-desc"></div>
@@ -1192,50 +1234,62 @@ function copyURL() {
 /* ══ ENVOI EMAIL (mailto) ══ */
 function sendEmail() {
   if (!currentURL) { toast('Generez d\'abord un QR code', true); return; }
-  var to = prompt('Email du destinataire :', '');
-  if (to === null) return;
-  to = to.trim();
+  document.getElementById('email-input').value = '';
+  document.getElementById('email-modal').classList.add('open');
+  setTimeout(function(){ document.getElementById('email-input').focus(); }, 100);
+}
+function closeEmailModal(e) {
+  if (e && e.target !== document.getElementById('email-modal')) return;
+  document.getElementById('email-modal').classList.remove('open');
+}
+function confirmEmail() {
+  var to = document.getElementById('email-input').value.trim();
   if (!to || to.indexOf('@') < 0) { toast('Email invalide', true); return; }
-  var sujet = 'Video partagee : ' + (currentTitle || 'Video');
+  var sujet = 'Video : ' + (currentTitle || 'Video');
   var corps;
   if (currentIsPIN) {
-    corps = 'Bonjour,\n\nVoici une video protegee par code PIN.\n\n'
-      + 'Cliquez sur ce lien pour y acceder :\n' + currentURL + '\n\n'
-      + 'Le code PIN vous sera communique separement (par SMS).\n\n'
-      + 'Pour lire la video : ouvrez le lien, saisissez le code PIN, puis appuyez sur "Ouvrir avec VLC".\n\n'
-      + 'Bonne journee.';
+    corps = 'Video protegee par PIN. Lien d\'acces :\n\n' + currentURL
+      + '\n\nLe code PIN est envoye par SMS separement.';
   } else {
-    corps = 'Bonjour,\n\nVoici une video partagee.\n\n'
-      + 'Cliquez sur ce lien pour y acceder :\n' + currentURL + '\n\n'
-      + 'Bonne journee.';
+    corps = 'Video partagee. Lien d\'acces :\n\n' + currentURL;
   }
   var mailto = 'mailto:' + to
     + '?subject=' + encodeURIComponent(sujet)
     + '&body=' + encodeURIComponent(corps);
+  document.getElementById('email-modal').classList.remove('open');
+  /* Lien clique = geste utilisateur, evite le blocage popup et la page blanche */
   var a = document.createElement('a');
   a.href = mailto;
-  a.target = '_blank';
+  a.style.display = 'none';
   document.body.appendChild(a);
   a.click();
-  setTimeout(function(){ document.body.removeChild(a); }, 500);
-  toast('Ouverture de votre app email...');
+  setTimeout(function(){ if (a.parentNode) document.body.removeChild(a); }, 1000);
 }
 
 /* ══ ENVOI PIN PAR SMS (sms) ══ */
 function sendSMS() {
   if (!currentIsPIN || !currentPIN) { toast('Disponible uniquement en mode PIN', true); return; }
-  var num = prompt('Numero de telephone du destinataire :', '');
-  if (num === null) return;
-  num = num.replace(/[^0-9+]/g, '');
+  document.getElementById('sms-input').value = '';
+  document.getElementById('sms-pin-preview').textContent = currentPIN;
+  document.getElementById('sms-modal').classList.add('open');
+  setTimeout(function(){ document.getElementById('sms-input').focus(); }, 100);
+}
+function closeSMSModal(e) {
+  if (e && e.target !== document.getElementById('sms-modal')) return;
+  document.getElementById('sms-modal').classList.remove('open');
+}
+function confirmSMS() {
+  var num = document.getElementById('sms-input').value.replace(/[^0-9+]/g, '');
   if (!num || num.length < 6) { toast('Numero invalide', true); return; }
   var msg = 'Code PIN pour la video "' + (currentTitle || 'Video') + '" : ' + currentPIN;
   var smsUrl = 'sms:' + num + '?body=' + encodeURIComponent(msg);
+  document.getElementById('sms-modal').classList.remove('open');
   var a = document.createElement('a');
   a.href = smsUrl;
+  a.style.display = 'none';
   document.body.appendChild(a);
   a.click();
-  setTimeout(function(){ document.body.removeChild(a); }, 500);
-  toast('Ouverture de votre app SMS...');
+  setTimeout(function(){ if (a.parentNode) document.body.removeChild(a); }, 1000);
 }
 function printQR() {
   var c = document.querySelector('#qr-container canvas');
@@ -1277,7 +1331,11 @@ function confirmDel() {
   toast('QR code supprime');
 }
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') document.getElementById('del-modal').classList.remove('open');
+  if (e.key === 'Escape') {
+    document.getElementById('del-modal').classList.remove('open');
+    document.getElementById('email-modal').classList.remove('open');
+    document.getElementById('sms-modal').classList.remove('open');
+  }
 });
 
 /* ══ BATCH ══ */

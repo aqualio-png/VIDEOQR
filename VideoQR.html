@@ -137,7 +137,12 @@ input[type="text"]:focus,input[type="url"]:focus{border-color:var(--amb);box-sha
 .batch-rm{width:32px;height:32px;border-radius:6px;border:1px solid var(--bdr);background:transparent;color:var(--mu);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1rem;transition:all .15s}
 .batch-rm:hover{background:rgba(232,85,85,.1);color:var(--red);border-color:var(--red)}
 .batch-results{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:13px;margin-top:16px}
-.brc{background:var(--surf);border:1px solid var(--bdr);border-radius:10px;padding:13px;display:flex;flex-direction:column;align-items:center;gap:9px;cursor:pointer;transition:border-color .18s}
+.brc{background:var(--surf);border:1px solid var(--bdr);border-radius:10px;padding:13px;display:flex;flex-direction:column;align-items:center;gap:9px;transition:border-color .18s}
+.brc-pin{font-family:'DM Mono',monospace;font-size:1.3rem;font-weight:700;letter-spacing:.2em;color:var(--amb);background:var(--amb-g);padding:4px 12px;border-radius:6px;border:1px solid rgba(245,166,35,.25)}
+.brc-btns{display:flex;gap:6px;width:100%;flex-wrap:wrap}
+.brc-btn{flex:1;min-width:60px;padding:7px 4px;font-size:.68rem;font-weight:600;border-radius:6px;border:1px solid var(--bdr);background:transparent;color:var(--mu);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all .15s}
+.brc-btn:hover{border-color:var(--amb);color:var(--amb)}
+.brc-btn-dl{background:var(--amb-g);color:var(--amb);border-color:rgba(245,166,35,.3)}
 .brc:hover{border-color:var(--amb)}
 .brc-qr{background:#fff;padding:7px;border-radius:6px}
 .brc-lbl{font-size:.73rem;color:var(--mu);text-align:center;word-break:break-all;font-family:'DM Mono',monospace;line-height:1.4}
@@ -184,7 +189,8 @@ footer{margin-top:50px;padding-top:20px;border-top:1px solid var(--bdr);font-siz
   .tabs{width:100%}
   .tab{flex:1 0 auto;text-align:center;padding:10px 12px;font-size:.7rem}
   .btn{padding:10px 13px;font-size:.8rem}
-  .batch-item{grid-template-columns:1fr auto}
+  .batch-item{grid-template-columns:1fr;gap:6px}
+  .batch-item .batch-rm{width:100%;height:36px}
 }
 /* Alerte longueur QR data: */
 .qr-len-warn{background:rgba(232,85,85,.08);border:1px solid rgba(232,85,85,.25);border-radius:8px;padding:10px 13px;font-size:.78rem;color:var(--red);line-height:1.6;margin-top:10px;display:none}
@@ -571,15 +577,31 @@ body.outdoor .pd{background:#fff}
 <!-- PANEL MULTI-VIDEOS -->
 <div id="tab-batch" class="panel">
   <div class="card">
-    <p style="font-size:.83rem;color:var(--mu);margin-bottom:16px">Generez plusieurs QR codes en une fois. Cliquez sur une carte pour telecharger.</p>
+    <p style="font-size:.83rem;color:var(--mu);margin-bottom:16px">Generez plusieurs QR codes en une fois, chacun avec son propre code PIN.</p>
+
+    <label class="pin-toggle" for="batch-pin-chk" style="margin-top:0;margin-bottom:14px">
+      <input type="checkbox" id="batch-pin-chk" checked onchange="toggleBatchPin()">
+      <span class="pin-toggle-lbl">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Proteger chaque video par code PIN
+        <span class="pin-toggle-sub">Via GitHub Pages</span>
+      </span>
+    </label>
+
+    <div id="batch-host-group" class="field-group" style="margin-bottom:16px">
+      <div class="field-label">URL GitHub Pages de VideoQR.html</div>
+      <input type="url" id="batch-host" value="https://aqualio-png.github.io/VIDEOQR/VideoQR.html"
+        placeholder="https://aqualio-png.github.io/VIDEOQR/VideoQR.html">
+    </div>
+
     <div class="batch-list" id="batch-list">
       <div class="batch-item">
-        <input type="url" placeholder="https://... (URL video)" class="b-url">
+        <input type="url" placeholder="http://... (URL video)" class="b-url">
         <input type="text" placeholder="Nom / label" class="b-name">
         <button class="batch-rm" onclick="removeRow(this)">x</button>
       </div>
       <div class="batch-item">
-        <input type="url" placeholder="https://... (URL video)" class="b-url">
+        <input type="url" placeholder="http://... (URL video)" class="b-url">
         <input type="text" placeholder="Nom / label" class="b-name">
         <button class="batch-rm" onclick="removeRow(this)">x</button>
       </div>
@@ -1343,7 +1365,7 @@ document.addEventListener('keydown', function(e) {
 function addRow() {
   var list = document.getElementById('batch-list');
   var d = document.createElement('div'); d.className = 'batch-item';
-  d.innerHTML = '<input type="url" placeholder="https://..." class="b-url">'
+  d.innerHTML = '<input type="url" placeholder="http://..." class="b-url">'
     + '<input type="text" placeholder="Nom / label" class="b-name">'
     + '<button class="batch-rm" onclick="removeRow(this)">x</button>';
   list.appendChild(d);
@@ -1352,32 +1374,149 @@ function removeRow(btn) {
   var list = document.getElementById('batch-list');
   if (list.children.length > 1) btn.closest('.batch-item').remove();
 }
+function toggleBatchPin() {
+  var on = document.getElementById('batch-pin-chk').checked;
+  document.getElementById('batch-host-group').style.display = on ? 'block' : 'none';
+}
+
+/* Stockage des donnees batch generees (pour mail/SMS par carte) */
+var _batchData = {};
+
 function generateBatch() {
-  var rows = document.querySelectorAll('.batch-item');
+  var usePin = document.getElementById('batch-pin-chk').checked;
+  var host = '';
+  if (usePin) {
+    host = document.getElementById('batch-host').value.trim();
+    if (!host || !host.startsWith('http')) { toast('Entrez l\'URL GitHub Pages', true); return; }
+  }
+  var rows = Array.prototype.slice.call(document.querySelectorAll('#batch-list .batch-item'));
   var res  = document.getElementById('batch-results');
   res.innerHTML = '';
+  _batchData = {};
   var n = 0;
-  rows.forEach(function(row) {
-    var url  = row.querySelector('.b-url').value.trim();
-    var name = row.querySelector('.b-name').value.trim() || url.split('/').pop() || 'video';
-    if (!url || !url.startsWith('http')) return;
-    var card = document.createElement('div'); card.className = 'brc';
-    var qd   = document.createElement('div'); qd.className = 'brc-qr';
-    var lbl  = document.createElement('div'); lbl.className = 'brc-lbl'; lbl.textContent = name;
-    card.appendChild(qd); card.appendChild(lbl); res.appendChild(card);
-    setTimeout(function() {
-      new QRCode(qd, { text: url, width: 110, height: 110, colorDark: '#000', colorLight: '#fff', correctLevel: QRCode.CorrectLevel.M });
-      card.addEventListener('click', function() {
-        setTimeout(function() {
-          var cv = qd.querySelector('canvas');
-          if (cv) { var a = document.createElement('a'); a.download = name.replace(/\s+/g, '_')+'_qr.png'; a.href = cv.toDataURL('image/png'); a.click(); }
-        }, 100);
-      });
-    }, 50);
+  var promises = [];
+
+  rows.forEach(function(row, idx) {
+    var urlEl  = row.querySelector('.b-url');
+    var nameEl = row.querySelector('.b-name');
+    if (!urlEl) return;
+    var url  = (urlEl.value || '').trim();
+    var name = (nameEl && nameEl.value ? nameEl.value.trim() : '') || (url.split('/').pop()) || 'video';
+    if (!url || url.indexOf('http') !== 0) return;
+
+    var id = 'b' + idx + '_' + Date.now();
     n++;
+
+    var p;
+    if (usePin) {
+      /* Generer PIN + hash pour cette video */
+      var pin = String(Math.floor(1000 + Math.random() * 9000));
+      var salt = Math.random().toString(36).substr(2, 14);
+      p = sha256hex(pin + salt).then(function(h) {
+        var payload = JSON.stringify({ u: url, t: name, d: '', s: salt, h: h });
+        var qrURL = host.replace(/#.*$/, '') + '#v=' + b64uEnc(payload);
+        _batchData[id] = { url: url, name: name, pin: pin, qrURL: qrURL, isPin: true };
+        return { id: id, name: name, pin: pin, qrURL: qrURL };
+      });
+    } else {
+      _batchData[id] = { url: url, name: name, pin: '', qrURL: url, isPin: false };
+      p = Promise.resolve({ id: id, name: name, pin: '', qrURL: url });
+    }
+    promises.push(p);
   });
-  if (!n) toast('Ajoutez au moins une URL valide', true);
-  else toast(n + ' QR code(s) genere(s) \u2014 cliquer pour telecharger');
+
+  if (!n) { toast('Ajoutez au moins une URL valide (http...)', true); return; }
+
+  Promise.all(promises).then(function(items) {
+    items.forEach(function(it) {
+      _renderBatchCard(res, it);
+    });
+    toast(n + ' QR code(s) genere(s)');
+  });
+}
+
+function _renderBatchCard(res, it) {
+  var card = document.createElement('div'); card.className = 'brc';
+  var qd   = document.createElement('div'); qd.className = 'brc-qr';
+  var lbl  = document.createElement('div'); lbl.className = 'brc-lbl'; lbl.textContent = it.name;
+  card.appendChild(qd);
+  card.appendChild(lbl);
+
+  if (it.pin) {
+    var pinEl = document.createElement('div'); pinEl.className = 'brc-pin'; pinEl.textContent = it.pin;
+    card.appendChild(pinEl);
+  }
+
+  /* Boutons */
+  var btns = document.createElement('div'); btns.className = 'brc-btns';
+  var dlB = document.createElement('button'); dlB.className = 'brc-btn brc-btn-dl';
+  dlB.innerHTML = '&#8595; PNG';
+  dlB.onclick = function() {
+    var cv = qd.querySelector('canvas');
+    if (cv) {
+      var a = document.createElement('a');
+      a.download = it.name.replace(/[^a-z0-9]/gi, '_') + '_qr.png';
+      a.href = cv.toDataURL('image/png');
+      document.body.appendChild(a); a.click();
+      setTimeout(function(){ if(a.parentNode) document.body.removeChild(a); }, 500);
+    }
+  };
+  btns.appendChild(dlB);
+
+  var mailB = document.createElement('button'); mailB.className = 'brc-btn';
+  mailB.innerHTML = '&#9993; Mail';
+  mailB.onclick = function() { _batchEmail(it); };
+  btns.appendChild(mailB);
+
+  if (it.pin) {
+    var smsB = document.createElement('button'); smsB.className = 'brc-btn';
+    smsB.innerHTML = '&#128172; SMS';
+    smsB.onclick = function() { _batchSMS(it); };
+    btns.appendChild(smsB);
+  }
+  card.appendChild(btns);
+  res.appendChild(card);
+
+  /* Generer le QR */
+  setTimeout(function() {
+    try {
+      var len = it.qrURL.length;
+      var sz = len > 300 ? 200 : 150;
+      new QRCode(qd, { text: it.qrURL, width: sz, height: sz, colorDark: '#000', colorLight: '#fff', correctLevel: QRCode.CorrectLevel.L });
+    } catch(e) { qd.textContent = 'Erreur QR'; }
+  }, 60);
+}
+
+function _batchEmail(it) {
+  var to = prompt('Email du destinataire pour "' + it.name + '" :', '');
+  if (to === null) return;
+  to = to.trim();
+  if (!to || to.indexOf('@') < 0) { toast('Email invalide', true); return; }
+  var corps;
+  if (it.isPin) {
+    corps = 'Video protegee par PIN. Lien d\'acces :\n\n' + it.qrURL
+      + '\n\nLe code PIN est envoye par SMS separement.';
+  } else {
+    corps = 'Video partagee. Lien d\'acces :\n\n' + it.qrURL;
+  }
+  var mailto = 'mailto:' + to + '?subject=' + encodeURIComponent('Video : ' + it.name)
+    + '&body=' + encodeURIComponent(corps);
+  var a = document.createElement('a'); a.href = mailto; a.style.display = 'none';
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ if(a.parentNode) document.body.removeChild(a); }, 1000);
+}
+
+function _batchSMS(it) {
+  if (!it.pin) return;
+  var num = prompt('Numero de telephone pour le PIN de "' + it.name + '" :', '');
+  if (num === null) return;
+  num = num.replace(/[^0-9+]/g, '');
+  if (!num || num.length < 6) { toast('Numero invalide', true); return; }
+  var msg = 'Code PIN pour la video "' + it.name + '" : ' + it.pin;
+  var smsUrl = 'sms:' + num + '?body=' + encodeURIComponent(msg);
+  var a = document.createElement('a'); a.href = smsUrl; a.style.display = 'none';
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ if(a.parentNode) document.body.removeChild(a); }, 1000);
 }
 
 /* ══ COMPRESSEUR ══ */

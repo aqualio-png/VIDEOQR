@@ -46,8 +46,9 @@ body.outdoor .od-btn{background:var(--amb);color:#fff;border-color:var(--amb)}
 .step-title{font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--amb);margin-bottom:5px}
 .step-desc{font-size:.79rem;color:var(--mu);line-height:1.55}
 .step-desc code{font-family:'DM Mono',monospace;background:var(--dim);padding:1px 5px;border-radius:4px;font-size:.76rem;color:var(--amb)}
-.tabs{display:flex;border:1px solid var(--bdr);border-radius:10px;overflow:hidden;margin-bottom:18px;width:fit-content}
-.tab{padding:9px 17px;font-size:.78rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mu);cursor:pointer;background:transparent;border:none;transition:all .18s;white-space:nowrap}
+.tabs{display:flex;border:1px solid var(--bdr);border-radius:10px;overflow-x:auto;overflow-y:hidden;margin-bottom:18px;width:100%;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:9px 15px;font-size:.76rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--mu);cursor:pointer;background:transparent;border:none;transition:all .18s;white-space:nowrap;flex:1 0 auto;text-align:center}
 .tab.active{background:var(--amb);color:#0c0c0e}
 .tab:not(.active):hover{color:var(--tx)}
 .panel{display:none}.panel.active{display:block}
@@ -181,7 +182,7 @@ footer{margin-top:50px;padding-top:20px;border-top:1px solid var(--bdr);font-siz
   .preset-grid{grid-template-columns:repeat(3,1fr)}
   .vinfo{grid-template-columns:repeat(2,1fr)}
   .tabs{width:100%}
-  .tab{flex:1;text-align:center;padding:9px 6px;font-size:.7rem}
+  .tab{flex:1 0 auto;text-align:center;padding:10px 12px;font-size:.7rem}
   .btn{padding:10px 13px;font-size:.8rem}
   .batch-item{grid-template-columns:1fr auto}
 }

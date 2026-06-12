@@ -271,11 +271,17 @@ body.outdoor .pd{background:#fff}
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           Ouvrir avec VLC / player
         </button>
-        <button class="v-open" id="v-dl-btn"
-          style="background:transparent;border:1px solid var(--bdr);cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:500;color:var(--mu)">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Telecharger la video
-        </button>
+        <div style="background:var(--bg);border:1px solid var(--bdr);border-radius:10px;padding:13px 15px;margin-top:10px;text-align:left">
+          <div style="display:flex;gap:8px;align-items:flex-start">
+            <span style="color:var(--amb);flex-shrink:0;font-size:.95rem">&#128190;</span>
+            <div style="font-size:.78rem;color:var(--mu);line-height:1.6">
+              <strong style="color:var(--tx)">Pour enregistrer la video :</strong><br>
+              1. Appuyez sur <strong style="color:var(--amb)">Ouvrir avec VLC</strong><br>
+              2. Dans VLC, ouvrez le menu <strong>&#8942;</strong> (3 points)<br>
+              3. Choisissez <strong>Telecharger</strong> ou <strong>Enregistrer</strong>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1084,10 +1090,6 @@ function verifyPIN() {
 
       document.getElementById('v-ok-sub').textContent = '\u00AB '+(vd.t||'video')+'\u00BB';
 
-      var isHttp = vd.u.startsWith('http://');
-      var pageHttps = window.location.protocol === 'https:';
-      var mixedBlock = isHttp && pageHttps; /* Chrome bloque HTTP depuis HTTPS */
-
       /* Bouton Ouvrir avec VLC : intent VIEW cible VLC.
          Fallback = Play Store VLC (PAS l URL MP4 qui se telechargerait) */
       var openBtn = document.getElementById('v-open-btn');
@@ -1104,43 +1106,6 @@ function verifyPIN() {
             + ';end';
           window.location.href = intentUrl;
         };
-      }
-
-      /* Bouton Telecharger */
-      var dlBtn = document.getElementById('v-dl-btn');
-      if (dlBtn) {
-        if (mixedBlock) {
-          /* HTTP depuis HTTPS : impossible de telecharger directement.
-             On passe par intent sans package => Android ouvre le selecteur
-             qui inclut le gestionnaire de telechargement */
-          dlBtn.textContent = '\u2193 Telecharger (choisir app)';
-          dlBtn.onclick = function() {
-            var scheme = 'http';
-            var intentUrl = 'intent://' + vd.u.replace(/^http:\/\//, '')
-              + '#Intent;scheme=' + scheme
-              + ';type=video/mp4'
-              + ';action=android.intent.action.VIEW'
-              + ';category=android.intent.category.BROWSABLE'
-              + ';S.browser_fallback_url=' + encodeURIComponent(vd.u)
-              + ';end';
-            var a = document.createElement('a');
-            a.href = intentUrl;
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(function(){ document.body.removeChild(a); }, 500);
-          };
-        } else {
-          /* HTTPS ou meme origine : telechargement direct */
-          dlBtn.textContent = '\u2193 Telecharger la video';
-          dlBtn.onclick = function() {
-            var a = document.createElement('a');
-            a.href = vd.u;
-            a.download = fn;
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(function(){ document.body.removeChild(a); }, 500);
-          };
-        }
       }
     } else {
       window._att++;

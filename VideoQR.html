@@ -1255,8 +1255,12 @@ function copyURL() {
 }
 
 /* ══ ENVOI EMAIL (mailto) ══ */
+/* _activeShare : item en cours de partage (generateur principal OU carte batch) */
+var _activeShare = null;
+
 function sendEmail() {
   if (!currentURL) { toast('Generez d\'abord un QR code', true); return; }
+  _activeShare = { qrURL: currentURL, name: currentTitle || 'Video', pin: currentPIN, isPin: currentIsPIN };
   document.getElementById('email-input').value = '';
   document.getElementById('email-modal').classList.add('open');
   setTimeout(function(){ document.getElementById('email-input').focus(); }, 100);
@@ -1268,30 +1272,32 @@ function closeEmailModal(e) {
 function confirmEmail() {
   var to = document.getElementById('email-input').value.trim();
   if (!to || to.indexOf('@') < 0) { toast('Email invalide', true); return; }
-  var sujet = 'Video : ' + (currentTitle || 'Video');
+  var sh = _activeShare;
+  if (!sh) { toast('Erreur, regenerez le QR', true); return; }
+  var sujet = 'Video : ' + (sh.name || 'Video');
   var corps;
-  if (currentIsPIN) {
-    corps = 'Video protegee par PIN. Lien d\'acces :\n\n' + currentURL
+  if (sh.isPin) {
+    corps = 'Video protegee par PIN. Lien d\'acces :\n\n' + sh.qrURL
       + '\n\nLe code PIN est envoye par SMS separement.';
   } else {
-    corps = 'Video partagee. Lien d\'acces :\n\n' + currentURL;
+    corps = 'Video partagee. Lien d\'acces :\n\n' + sh.qrURL;
   }
   var mailto = 'mailto:' + to
     + '?subject=' + encodeURIComponent(sujet)
     + '&body=' + encodeURIComponent(corps);
   document.getElementById('email-modal').classList.remove('open');
-  /* Lien clique = geste utilisateur, evite le blocage popup et la page blanche */
   var a = document.createElement('a');
   a.href = mailto;
   a.style.display = 'none';
   document.body.appendChild(a);
   a.click();
-  setTimeout(function(){ if (a.parentNode) document.body.removeChild(a); }, 1000);
+  document.body.removeChild(a);
 }
 
 /* ══ ENVOI PIN PAR SMS (sms) ══ */
 function sendSMS() {
   if (!currentIsPIN || !currentPIN) { toast('Disponible uniquement en mode PIN', true); return; }
+  _activeShare = { qrURL: currentURL, name: currentTitle || 'Video', pin: currentPIN, isPin: true };
   document.getElementById('sms-input').value = '';
   document.getElementById('sms-pin-preview').textContent = currentPIN;
   document.getElementById('sms-modal').classList.add('open');
@@ -1304,7 +1310,9 @@ function closeSMSModal(e) {
 function confirmSMS() {
   var num = document.getElementById('sms-input').value.replace(/[^0-9+]/g, '');
   if (!num || num.length < 6) { toast('Numero invalide', true); return; }
-  var msg = 'Code PIN pour la video "' + (currentTitle || 'Video') + '" : ' + currentPIN;
+  var sh = _activeShare;
+  if (!sh || !sh.pin) { toast('Erreur, regenerez le QR', true); return; }
+  var msg = 'Code PIN pour la video "' + (sh.name || 'Video') + '" : ' + sh.pin;
   var smsUrl = 'sms:' + num + '?body=' + encodeURIComponent(msg);
   document.getElementById('sms-modal').classList.remove('open');
   var a = document.createElement('a');
@@ -1312,7 +1320,7 @@ function confirmSMS() {
   a.style.display = 'none';
   document.body.appendChild(a);
   a.click();
-  setTimeout(function(){ if (a.parentNode) document.body.removeChild(a); }, 1000);
+  document.body.removeChild(a);
 }
 function printQR() {
   var c = document.querySelector('#qr-container canvas');
@@ -1488,41 +1496,20 @@ function _renderBatchCard(res, it) {
 }
 
 function _batchEmail(it) {
-  var to = prompt('Email du destinataire pour "' + it.name + '" :', '');
-  if (to === null) return;
-  to = to.trim();
-  if (!to || to.indexOf('@') < 0) { toast('Email invalide', true); return; }
-  var corps;
-  if (it.isPin) {
-    corps = 'Video protegee par PIN. Lien d\'acces :\n\n' + it.qrURL
-      + '\n\nLe code PIN est envoye par SMS separement.';
-  } else {
-    corps = 'Video partagee. Lien d\'acces :\n\n' + it.qrURL;
-  }
-  var mailto = 'mailto:' + to + '?subject=' + encodeURIComponent('Video : ' + it.name)
-    + '&body=' + encodeURIComponent(corps);
-  var a = document.createElement('a');
-  a.href = mailto;
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  _activeShare = it;
+  document.getElementById('email-input').value = '';
+  document.getElementById('email-modal').classList.add('open');
+  setTimeout(function(){ document.getElementById('email-input').focus(); }, 100);
 }
 
 function _batchSMS(it) {
   if (!it.pin) return;
-  var num = prompt('Numero de telephone pour le PIN de "' + it.name + '" :', '');
-  if (num === null) return;
-  num = num.replace(/[^0-9+]/g, '');
-  if (!num || num.length < 6) { toast('Numero invalide', true); return; }
-  var msg = 'Code PIN pour la video "' + it.name + '" : ' + it.pin;
-  var smsUrl = 'sms:' + num + '?body=' + encodeURIComponent(msg);
-  var a = document.createElement('a');
-  a.href = smsUrl;
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  _activeShare = it;
+  document.getElementById('sms-input').value = '';
+  var prev = document.getElementById('sms-pin-preview');
+  if (prev) prev.textContent = it.pin;
+  document.getElementById('sms-modal').classList.add('open');
+  setTimeout(function(){ document.getElementById('sms-input').focus(); }, 100);
 }
 
 /* ══ COMPRESSEUR ══ */
